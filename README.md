@@ -39,9 +39,9 @@
 > - 📖 a mini-dictionary of tech terms (API, database, container, cloud…) and an animated screen tour
 >
 > **How to open it:** click **[▶ view it rendered online](https://yousef-hamda.github.io/medflow-healthcare-platform/EXPLAINER.html)**
-> (one click, nothing to install), **or** download the repo and double-click `EXPLAINER.html` in any browser.
-> Prefer no browser? Read the **[PDF](EXPLAINER.pdf)**. Want to email it to someone? Send the
-> self-contained **[`EXPLAINER-standalone.html`](EXPLAINER-standalone.html)** (images baked in, works on its own).
+> (one click, nothing to install), **or** download `EXPLAINER.html` and double-click it in any browser.
+> It is **fully self-contained** — all images and the demo video are embedded, so it works anywhere
+> (moved, copied, or emailed). Prefer no browser? Read the **[PDF](EXPLAINER.pdf)**.
 
 ## What it is
 
