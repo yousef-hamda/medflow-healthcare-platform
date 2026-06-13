@@ -1,0 +1,140 @@
+name: Release
+
+# Tag-driven release: build + push versioned, signed images to GHCR, attach
+# SBOMs, attest them with cosign, and cut a GitHub Release with changelog notes.
+# All MedFlow data is synthetic; no real PHI is involved.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    name: Build, push & sign (${{ matrix.service.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # cosign keyless sign + attest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: dicom-receiver, context: apps/dicom-receiver }
+          - { name: wearables-ingester, context: apps/wearables-ingester }
+          - { name: ml-serving, context: apps/ml-serving }
+          - { name: ml-batch, context: apps/ml-batch }
+          - { name: fhir-server, context: apps/fhir-server }
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: meta
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push (version + latest)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.context }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Cosign keyless sign (by digest)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}@${DIGEST}
+
+      - name: Generate SBOM (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service.name }}.spdx.json
+
+      - name: Cosign attest SBOM
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign attest --yes \
+            --predicate sbom-${{ matrix.service.name }}.spdx.json \
+            --type spdxjson \
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service.name }}@${DIGEST}
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service.name }}
+          path: sbom-${{ matrix.service.name }}.spdx.json
+
+  release:
+    name: GitHub Release
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history for the changelog
+
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sbom-*
+          path: sboms
+          merge-multiple: true
+
+      - name: Generate changelog (conventional-changelog)
+        id: changelog
+        run: |
+          npx --yes conventional-changelog-cli \
+            -p conventionalcommits -r 2 > RELEASE_NOTES.md || echo "Release ${GITHUB_REF_NAME}" > RELEASE_NOTES.md
+          echo "## Container images" >> RELEASE_NOTES.md
+          for s in dicom-receiver wearables-ingester ml-serving ml-batch fhir-server; do
+            echo "- \`${REGISTRY}/${GITHUB_REPOSITORY}/${s}:${GITHUB_REF_NAME}\` (cosign-signed, SBOM attested)" >> RELEASE_NOTES.md
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: sboms/*.spdx.json
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}

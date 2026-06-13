@@ -1,0 +1,18 @@
+{
+  "name": "@medflow/contract-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Consumer-driven contract tests (Pact) for MedFlow. All data is synthetic.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pact:publish": "pact-broker publish ./pacts --consumer-app-version=$GIT_SHA --broker-base-url=$PACT_BROKER_BASE_URL --broker-token=$PACT_BROKER_TOKEN",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@pact-foundation/pact": "^12.1.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
