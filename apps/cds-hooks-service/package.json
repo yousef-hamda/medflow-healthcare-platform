@@ -1,0 +1,42 @@
+{
+  "name": "@medflow/cds-hooks-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MedFlow CDS Hooks 1.1 service — sepsis early-warning and readmission-risk decision support, backed by ML serving and FHIR prefetch.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@medflow/fhir-types": "workspace:*",
+    "@medflow/shared-types": "workspace:*",
+    "@fastify/cors": "9.0.1",
+    "@opentelemetry/auto-instrumentations-node": "0.46.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.51.1",
+    "@opentelemetry/sdk-node": "0.51.1",
+    "fastify": "4.28.1",
+    "pg": "8.12.0",
+    "pino": "9.2.0",
+    "pino-http": "10.2.0",
+    "pino-pretty": "11.2.1",
+    "prom-client": "15.1.2",
+    "uuid": "10.0.0",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/pg": "8.11.6",
+    "@types/uuid": "10.0.0",
+    "@typescript-eslint/eslint-plugin": "7.13.0",
+    "@typescript-eslint/parser": "7.13.0",
+    "eslint": "8.57.0",
+    "tsx": "4.16.2",
+    "typescript": "5.4.5",
+    "vitest": "1.6.0"
+  }
+}

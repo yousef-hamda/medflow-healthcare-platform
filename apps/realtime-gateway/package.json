@@ -1,0 +1,43 @@
+{
+  "name": "@medflow/realtime-gateway",
+  "version": "0.1.0",
+  "description": "Socket.IO real-time gateway — Kafka fan-out, JWT auth, Redis ring buffer, OTel.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@medflow/shared-types": "workspace:*",
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "0.48.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.52.1",
+    "@opentelemetry/resources": "1.25.1",
+    "@opentelemetry/sdk-node": "0.52.1",
+    "@opentelemetry/semantic-conventions": "1.25.1",
+    "ioredis": "5.4.1",
+    "jsonwebtoken": "9.0.2",
+    "kafkajs": "2.2.4",
+    "node-fetch": "3.3.2",
+    "pino": "9.2.0",
+    "pino-pretty": "11.2.1",
+    "prom-client": "15.1.2",
+    "socket.io": "4.7.5",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "9.0.6",
+    "@types/node": "20.14.9",
+    "@typescript-eslint/eslint-plugin": "7.13.0",
+    "@typescript-eslint/parser": "7.13.0",
+    "eslint": "8.57.0",
+    "tsx": "4.16.2",
+    "typescript": "5.4.5",
+    "vitest": "1.6.0"
+  }
+}
