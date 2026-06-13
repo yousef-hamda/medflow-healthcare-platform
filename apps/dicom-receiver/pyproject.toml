@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "medflow-dicom-receiver"
+version = "0.1.0"
+description = "MedFlow DICOM C-STORE/C-ECHO receiver: MinIO persistence, FHIR ImagingStudy, Kafka events, ML preprocessing."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pynetdicom==2.1.1",
+    "pydicom==2.4.4",
+    "numpy==1.26.4",
+    "pillow==10.4.0",
+    "minio==7.2.15",
+    "confluent-kafka==2.8.0",
+    "pyarrow==16.1.0",
+    "httpx==0.28.1",
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.2",
+    "pydantic==2.11.4",
+    "pydantic-settings==2.9.1",
+    "structlog==25.3.0",
+    "prometheus-client==0.21.1",
+    "opentelemetry-sdk==1.32.1",
+    "opentelemetry-exporter-otlp-proto-http==1.32.1",
+    "opentelemetry-instrumentation-fastapi==0.53b1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-asyncio==0.26.0",
+    "ruff==0.11.8",
+    "black==25.1.0",
+    "mypy==1.15.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/medflow_dicom"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET", "PL"]
+ignore = ["PLR0913"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["medflow_dicom"]
+
+[[tool.mypy.overrides]]
+module = [
+    "pynetdicom.*",
+    "pydicom.*",
+    "confluent_kafka.*",
+    "minio.*",
+    "pyarrow.*",
+    "PIL.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

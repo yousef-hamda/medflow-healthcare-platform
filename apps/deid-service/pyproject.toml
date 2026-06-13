@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "medflow-deid-service"
+version = "0.1.0"
+description = "MedFlow de-identification service: HIPAA Safe Harbor text + FHIR de-identification (Presidio + custom rules)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.2",
+    "pydantic==2.11.4",
+    "pydantic-settings==2.9.1",
+    "httpx==0.28.1",
+    "structlog==25.3.0",
+    "prometheus-client==0.21.1",
+    "presidio-analyzer==2.2.358",
+    "presidio-anonymizer==2.2.358",
+    "opentelemetry-sdk==1.32.1",
+    "opentelemetry-exporter-otlp-proto-http==1.32.1",
+    "opentelemetry-instrumentation-fastapi==0.53b1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-asyncio==0.26.0",
+    "ruff==0.11.8",
+    "black==25.1.0",
+    "mypy==1.15.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/medflow_deid"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET", "PL"]
+ignore = ["PLR0913", "PLR2004"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["medflow_deid"]
+
+[[tool.mypy.overrides]]
+module = ["presidio_analyzer.*", "presidio_anonymizer.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

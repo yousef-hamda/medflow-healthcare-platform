@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "medflow-wearables-ingester"
+version = "0.1.0"
+description = "MedFlow wearables vitals ingester: MQTT + HTTP intake, Postgres persistence, Kafka fan-out."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.2",
+    "pydantic==2.11.4",
+    "pydantic-settings==2.9.1",
+    "aiomqtt==2.3.0",
+    "sqlalchemy[asyncio]==2.0.40",
+    "asyncpg==0.30.0",
+    "alembic==1.15.2",
+    "confluent-kafka==2.8.0",
+    "structlog==25.3.0",
+    "prometheus-client==0.21.1",
+    "httpx==0.28.1",
+    "opentelemetry-sdk==1.32.1",
+    "opentelemetry-exporter-otlp-proto-http==1.32.1",
+    "opentelemetry-instrumentation-fastapi==0.53b1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-asyncio==0.26.0",
+    "ruff==0.11.8",
+    "black==25.1.0",
+    "mypy==1.15.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/medflow_wearables"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET", "PL"]
+ignore = ["PLR0913", "PLR2004"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["medflow_wearables"]
+
+[[tool.mypy.overrides]]
+module = ["confluent_kafka.*", "aiomqtt.*", "asyncpg.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
