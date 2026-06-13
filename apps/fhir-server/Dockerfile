@@ -1,5 +1,5 @@
 # ─────────────── Build stage ───────────────
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3-eclipse-temurin-26 AS build
 WORKDIR /workspace
 
 # Cache dependencies first.
@@ -12,7 +12,7 @@ COPY checkstyle.xml .
 RUN mvn -B -q clean package -DskipTests
 
 # ─────────────── Runtime stage ───────────────
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 # Run as a non-root user.
