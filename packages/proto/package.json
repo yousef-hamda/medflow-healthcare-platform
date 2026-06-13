@@ -12,6 +12,6 @@
     "dev": "buf lint --error-format=msvs"
   },
   "devDependencies": {
-    "@bufbuild/buf": "1.32.2"
+    "@bufbuild/buf": "1.70.0"
   }
 }
