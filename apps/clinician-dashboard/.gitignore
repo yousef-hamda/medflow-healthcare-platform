@@ -1,0 +1,18 @@
+# Next.js
+.next/
+out/
+next-env.d.ts.bak
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Misc
+*.tsbuildinfo

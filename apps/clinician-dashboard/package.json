@@ -1,0 +1,51 @@
+{
+  "name": "@medflow/clinician-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MedFlow clinician dashboard — risk-ranked worklist, patient 360, cohort builder, audit & model governance. All data is synthetic.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@cornerstonejs/core": "1.77.0",
+    "@cornerstonejs/dicom-image-loader": "1.77.0",
+    "@medflow/fhir-types": "workspace:*",
+    "@medflow/shared-types": "workspace:*",
+    "@medflow/ui": "workspace:*",
+    "@tanstack/react-query": "5.51.1",
+    "dicom-parser": "1.8.21",
+    "next": "14.2.5",
+    "next-intl": "3.17.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "recharts": "2.12.7",
+    "socket.io-client": "4.7.5",
+    "zod": "3.23.8",
+    "zustand": "4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.46.0",
+    "@testing-library/jest-dom": "6.5.0",
+    "@testing-library/react": "16.0.1",
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.5",
+    "@types/react-dom": "18.3.0",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "@vitejs/plugin-react": "4.3.1",
+    "autoprefixer": "10.4.20",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+    "jsdom": "25.0.0",
+    "postcss": "8.4.41",
+    "tailwindcss": "3.4.13",
+    "typescript": "5.5.4",
+    "vitest": "2.1.1"
+  }
+}

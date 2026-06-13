@@ -1,0 +1,39 @@
+@import "@medflow/ui/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, "Noto Sans", "Noto Sans Hebrew", "Noto Sans Arabic", sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Visible focus for keyboard users across all interactive elements. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Skip link: hidden until focused, then pinned to the top-start corner. */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed start-4 top-4 z-[200] rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg;
+  }
+}
+
+/* Recharts inherits currentColor; keep tooltips legible in both themes. */
+.recharts-default-tooltip {
+  @apply rounded-md border border-border bg-popover px-2 py-1 text-sm text-popover-foreground shadow-md;
+}

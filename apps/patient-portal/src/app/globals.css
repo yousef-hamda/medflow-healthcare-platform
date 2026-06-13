@@ -1,0 +1,37 @@
+@import "@medflow/ui/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Accessible skip link — visible on focus only. */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg;
+  }
+
+  .portal-gradient {
+    background-image: radial-gradient(
+        1200px circle at 0% -10%,
+        hsl(var(--primary) / 0.10),
+        transparent 45%
+      ),
+      radial-gradient(900px circle at 100% 0%, hsl(var(--accent) / 0.18), transparent 40%);
+  }
+}
