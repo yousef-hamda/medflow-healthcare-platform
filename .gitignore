@@ -79,3 +79,7 @@ data/great_expectations/uncommitted/
 *.log
 tmp/
 .cache/
+
+# Locally-installed third-party agent skills (not part of the project)
+.agents/
+.claude/skills/
