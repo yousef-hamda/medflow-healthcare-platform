@@ -1,5 +1,5 @@
 # ---- build stage -----------------------------------------------------------
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /build
 COPY pyproject.toml README.md ./
@@ -9,7 +9,7 @@ COPY src ./src
 RUN pip install --no-cache-dir --prefix=/install .
 
 # ---- runtime stage ----------------------------------------------------------
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.title="medflow-dicom-receiver" \
       org.opencontainers.image.description="DICOM C-STORE/C-ECHO SCP with MinIO, FHIR and Kafka integration"
