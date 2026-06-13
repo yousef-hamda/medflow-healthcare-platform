@@ -1,0 +1,79 @@
+# MedFlow pre-commit hooks.
+# Install:  pip install pre-commit && pre-commit install
+# Run all:  pre-commit run --all-files
+# detect-secrets baseline:  detect-secrets scan > .secrets.baseline
+#
+# All MedFlow data is synthetic. The local PHI guards below are defence-in-depth
+# so patient-looking identifiers never reach a log statement.
+
+minimum_pre_commit_version: "3.5.0"
+default_language_version:
+  python: python3.11
+
+repos:
+  # ── Python lint + format ───────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ── Generic hygiene ────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+
+  # ── Secret scanning ────────────────────────────────────────────────────────
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+
+  # ── YAML lint ──────────────────────────────────────────────────────────────
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-d, relaxed]
+
+  # ── Dockerfile lint ────────────────────────────────────────────────────────
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.1-beta
+    hooks:
+      - id: hadolint-docker
+        files: (^|/)Dockerfile$
+
+  # ── Local MedFlow guards ───────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      # PHI-in-logs guard for Python (AST mode).
+      - id: check-phi-logging
+        name: check PHI in logs (python)
+        entry: python scripts/hooks/check_phi_logging.py
+        language: system
+        types: [python]
+
+      # PHI-in-logs guard for TypeScript/JavaScript (regex mode).
+      - id: check-phi-logging-ts
+        name: check PHI in logs (ts/js)
+        entry: python scripts/hooks/check_phi_logging.py --mode ts
+        language: system
+        files: \.(ts|tsx|js|jsx|mjs|cjs)$
+
+      # Conventional commit message lint (mirrors the husky commit-msg hook).
+      - id: commitlint
+        name: commitlint (conventional commits)
+        entry: npx --no -- commitlint --edit
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false

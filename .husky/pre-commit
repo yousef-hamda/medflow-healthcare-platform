@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh" 2>/dev/null || true
+
+# MedFlow pre-commit: format/lint staged files, then run the pre-commit guards
+# (ruff, secrets, PHI-in-logs) if pre-commit is installed.
+
+# 1) lint-staged for staged JS/TS/JSON/MD (prettier + eslint as configured).
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec lint-staged || exit 1
+fi
+
+# 2) pre-commit framework hooks (includes the PHI-in-logs guards) on staged files.
+if command -v pre-commit >/dev/null 2>&1; then
+  pre-commit run --hook-stage pre-commit || exit 1
+else
+  # Fallback: run the PHI guard directly on staged Python / TS files.
+  STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM -- '*.py')
+  STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM -- '*.ts' '*.tsx' '*.js' '*.jsx')
+  if [ -n "$STAGED_PY" ]; then
+    python scripts/hooks/check_phi_logging.py $STAGED_PY || exit 1
+  fi
+  if [ -n "$STAGED_TS" ]; then
+    python scripts/hooks/check_phi_logging.py --mode ts $STAGED_TS || exit 1
+  fi
+fi
