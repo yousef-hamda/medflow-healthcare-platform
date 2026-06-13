@@ -24,6 +24,13 @@
 
 ---
 
+> [!TIP]
+> **New to the project or non-technical?** Start with the illustrated, animated walkthrough:
+> **[`EXPLAINER.html`](EXPLAINER.html)** — download it and open in any browser, or
+> [**view it rendered online ▶**](https://htmlpreview.github.io/?https://github.com/yousef-hamda/medflow-healthcare-platform/blob/main/EXPLAINER.html).
+> A no-browser **[PDF version](EXPLAINER.pdf)** and a fully self-contained
+> **[`EXPLAINER-standalone.html`](EXPLAINER-standalone.html)** (images baked in, for emailing/sharing) are included too.
+
 ## What it is
 
 MedFlow ingests synthetic clinical data through the same standard interfaces a real hospital integration
