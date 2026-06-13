@@ -1,0 +1,59 @@
+server:
+  port: ${SERVER_PORT:8090}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: fhir-server
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fhir}
+    username: ${SPRING_DATASOURCE_USERNAME:medflow}
+    password: ${SPRING_DATASOURCE_PASSWORD:medflow_dev_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      pool-name: fhir-hikari
+  jpa:
+    properties:
+      hibernate:
+        dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
+        format_sql: false
+    open-in-view: false
+
+kafka:
+  brokers: ${KAFKA_BROKERS:localhost:9092}
+  topics:
+    fhir-changes: fhir.changes
+
+audit:
+  service:
+    url: ${AUDIT_SERVICE_URL:http://localhost:8095}
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: fhir-server
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    ca.uhn.fhir: WARN
+    com.medflow: INFO

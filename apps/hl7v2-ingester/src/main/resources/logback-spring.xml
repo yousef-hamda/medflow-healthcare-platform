@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured JSON logging for the MedFlow HL7v2 ingester.
+
+  PHI SAFETY: Application code must reference HL7 messages only by message type and control id.
+  Segment values (names, MRN, DOB, phone, address) and full raw messages must never be logged
+  by application code. The raw message is mirrored to Kafka, not to logs.
+-->
+<configuration>
+  <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+      <includeMdcKeyName>spanId</includeMdcKeyName>
+      <customFields>{"service":"hl7v2-ingester"}</customFields>
+      <fieldNames>
+        <timestamp>timestamp</timestamp>
+        <message>message</message>
+        <logger>logger</logger>
+        <thread>thread</thread>
+        <level>level</level>
+      </fieldNames>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON_CONSOLE"/>
+  </root>
+</configuration>

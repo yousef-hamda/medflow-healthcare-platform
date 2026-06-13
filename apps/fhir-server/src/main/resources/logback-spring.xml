@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured JSON logging for the MedFlow FHIR server.
+
+  PHI SAFETY: This configuration emits structured events only. Application code is responsible for
+  never passing PHI values (names, MRN, DOB, phone, address) into log statements; log lines should
+  reference resources only by type and id. Do not add MDC fields or markers that carry PHI.
+-->
+<configuration>
+  <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+      <includeMdcKeyName>spanId</includeMdcKeyName>
+      <customFields>{"service":"fhir-server"}</customFields>
+      <fieldNames>
+        <timestamp>timestamp</timestamp>
+        <message>message</message>
+        <logger>logger</logger>
+        <thread>thread</thread>
+        <level>level</level>
+      </fieldNames>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON_CONSOLE"/>
+  </root>
+</configuration>
