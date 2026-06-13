@@ -79,6 +79,8 @@ identifiers via **HashiCorp Vault Transit**, a **tamper-evident hash-chained aud
 
 ![MedFlow product tour](docs/images/demo.gif)
 
+*▶ Higher-quality **[MP4 version](docs/images/demo.mp4)** · screens are shown in browser-window frames as polished UI previews.*
+
 </div>
 
 > [!NOTE]
