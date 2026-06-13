@@ -1,176 +1,22 @@
 version: 2
 
-# Grouped, weekly dependency updates across every ecosystem in the MedFlow
-# monorepo. Synthetic-data project — no production PHI dependencies.
+# Intentionally minimal. This is a synthetic-data portfolio project, not an
+# actively-maintained production service, so Dependabot is kept very quiet:
+# a single grouped check, monthly, with at most one open PR at a time — enough
+# to demonstrate supply-chain hygiene without flooding the inbox.
+#
+# To re-enable broad per-service updates later, add more `package-ecosystem`
+# entries (npm / pip / maven / docker per app). To turn Dependabot off entirely,
+# delete this file or set `open-pull-requests-limit: 0` on each entry.
 
 updates:
-  # ── npm / pnpm (root + key Node apps) ──────────────────────────────────────
-  - package-ecosystem: npm
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 10
-    groups:
-      node-dev:
-        dependency-type: development
-        patterns: ["*"]
-      node-prod:
-        dependency-type: production
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/apps/api-gateway"
-    schedule:
-      interval: weekly
-    groups:
-      api-gateway:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/apps/realtime-gateway"
-    schedule:
-      interval: weekly
-    groups:
-      realtime-gateway:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/apps/audit-service"
-    schedule:
-      interval: weekly
-    groups:
-      audit-service:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/apps/cds-hooks-service"
-    schedule:
-      interval: weekly
-    groups:
-      cds-hooks-service:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/apps/clinician-dashboard"
-    schedule:
-      interval: weekly
-    groups:
-      clinician-dashboard:
-        patterns: ["*"]
-
-  - package-ecosystem: npm
-    directory: "/tests/contract"
-    schedule:
-      interval: weekly
-    groups:
-      contract-tests:
-        patterns: ["*"]
-
-  # ── pip (the 5 Python services) ────────────────────────────────────────────
-  - package-ecosystem: pip
-    directory: "/apps/dicom-receiver"
-    schedule:
-      interval: weekly
-    groups:
-      dicom-receiver:
-        patterns: ["*"]
-
-  - package-ecosystem: pip
-    directory: "/apps/wearables-ingester"
-    schedule:
-      interval: weekly
-    groups:
-      wearables-ingester:
-        patterns: ["*"]
-
-  - package-ecosystem: pip
-    directory: "/apps/deid-service"
-    schedule:
-      interval: weekly
-    groups:
-      deid-service:
-        patterns: ["*"]
-
-  - package-ecosystem: pip
-    directory: "/apps/ml-serving"
-    schedule:
-      interval: weekly
-    groups:
-      ml-serving:
-        patterns: ["*"]
-
-  - package-ecosystem: pip
-    directory: "/apps/ml-batch"
-    schedule:
-      interval: weekly
-    groups:
-      ml-batch:
-        patterns: ["*"]
-
-  # ── maven (the 2 Java services) ────────────────────────────────────────────
-  - package-ecosystem: maven
-    directory: "/apps/fhir-server"
-    schedule:
-      interval: weekly
-    groups:
-      fhir-server:
-        patterns: ["*"]
-
-  - package-ecosystem: maven
-    directory: "/apps/hl7v2-ingester"
-    schedule:
-      interval: weekly
-    groups:
-      hl7v2-ingester:
-        patterns: ["*"]
-
-  # ── docker (per-service Dockerfiles) ───────────────────────────────────────
-  - package-ecosystem: docker
-    directory: "/apps/dicom-receiver"
-    schedule:
-      interval: weekly
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: docker
-    directory: "/apps/wearables-ingester"
-    schedule:
-      interval: weekly
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: docker
-    directory: "/apps/ml-serving"
-    schedule:
-      interval: weekly
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: docker
-    directory: "/apps/ml-batch"
-    schedule:
-      interval: weekly
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  - package-ecosystem: docker
-    directory: "/apps/fhir-server"
-    schedule:
-      interval: weekly
-    groups:
-      docker-base:
-        patterns: ["*"]
-
-  # ── GitHub Actions ─────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "chore(ci)"
     groups:
       github-actions:
         patterns: ["*"]

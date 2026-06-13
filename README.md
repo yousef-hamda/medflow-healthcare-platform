@@ -56,8 +56,17 @@ identifiers via **HashiCorp Vault Transit**, a **tamper-evident hash-chained aud
 
 ## Screenshots
 
-> Capture guide and exact filenames in [`docs/images/README.md`](docs/images/README.md). Drop the PNGs/GIFs
-> into `docs/images/` once the stack is running and seeded.
+<div align="center">
+
+![MedFlow product tour](docs/images/demo.gif)
+
+</div>
+
+> [!NOTE]
+> The images below are **representative UI previews (mockups)** that show the intended look and information
+> design of each screen — they are illustrations, not captures of the live running system. Real screenshots
+> (and richer GIFs) can replace them once the stack is started and seeded; the capture guide and exact
+> filenames are in [`docs/images/README.md`](docs/images/README.md).
 
 | Clinician worklist (risk-ranked) | Patient view — sepsis risk + SHAP |
 |---|---|
@@ -75,8 +84,7 @@ identifiers via **HashiCorp Vault Transit**, a **tamper-evident hash-chained aud
 |---|---|
 | ![Superset](docs/images/07-superset-dashboard.png) | ![Lineage](docs/images/08-marquez-lineage.png) |
 
-Demo GIFs: live sepsis alert (`gif-01-live-sepsis-alert.gif`), break-glass access (`gif-02-break-glass.gif`),
-de-identification before/after (`gif-03-deid-before-after.gif`).
+The looping tour above (`docs/images/demo.gif`) walks through these same screens.
 
 ---
 
