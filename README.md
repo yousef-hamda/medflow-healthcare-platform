@@ -13,6 +13,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org/)
 [![Java 17](https://img.shields.io/badge/Java-17-007396.svg)](https://openjdk.org/)
 
+[![📘 Non-coder explainer](https://img.shields.io/badge/📘_Non--coder_explainer-open_in_browser-0d9488?style=for-the-badge)](https://htmlpreview.github.io/?https://github.com/yousef-hamda/medflow-healthcare-platform/blob/main/EXPLAINER.html)
+&nbsp;
+[![PDF](https://img.shields.io/badge/or_read_the-PDF-ef4444?style=for-the-badge)](EXPLAINER.pdf)
+
 </div>
 
 > [!IMPORTANT]
@@ -25,11 +29,19 @@
 ---
 
 > [!TIP]
-> **New to the project or non-technical?** Start with the illustrated, animated walkthrough:
-> **[`EXPLAINER.html`](EXPLAINER.html)** — download it and open in any browser, or
-> [**view it rendered online ▶**](https://htmlpreview.github.io/?https://github.com/yousef-hamda/medflow-healthcare-platform/blob/main/EXPLAINER.html).
-> A no-browser **[PDF version](EXPLAINER.pdf)** and a fully self-contained
-> **[`EXPLAINER-standalone.html`](EXPLAINER-standalone.html)** (images baked in, for emailing/sharing) are included too.
+> ### 📘 Not a coder? Read this first — [`EXPLAINER.html`](EXPLAINER.html)
+> An illustrated, animated, plain-English walkthrough of the whole project — **no technical
+> background needed.** Inside you'll find:
+> - 🏥 a one-sentence summary and an everyday "smart hospital receptionist" analogy
+> - 💓 an animated *"journey of a heartbeat"* showing how data becomes a live alert
+> - 🧩 the 5 main parts explained simply, each with a "what the coder words mean" note
+> - 👀 one tiny piece of real code, annotated line-by-line
+> - 📖 a mini-dictionary of tech terms (API, database, container, cloud…) and an animated screen tour
+>
+> **How to open it:** click **[▶ view it rendered online](https://htmlpreview.github.io/?https://github.com/yousef-hamda/medflow-healthcare-platform/blob/main/EXPLAINER.html)**
+> (one click, nothing to install), **or** download the repo and double-click `EXPLAINER.html` in any browser.
+> Prefer no browser? Read the **[PDF](EXPLAINER.pdf)**. Want to email it to someone? Send the
+> self-contained **[`EXPLAINER-standalone.html`](EXPLAINER-standalone.html)** (images baked in, works on its own).
 
 ## What it is
 
