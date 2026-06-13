@@ -126,6 +126,22 @@
   .tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
   .tagrow span{background:#f1f5f9; color:var(--slate); border-radius:999px; padding:4px 12px; font-size:.78rem; font-weight:600}
   .nb{background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:18px 22px; color:#92400e}
+
+  /* ---------- PRINT / PDF ---------- */
+  @media print{
+    @page{margin:14mm}
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+       animation:none !important; transition:none !important }
+    /* scroll-reveal items must be visible on paper (no scrolling happens) */
+    .reveal{opacity:1 !important; transform:none !important}
+    .scrollcue, .float-icons{display:none !important}
+    .hero{min-height:auto; padding:60px 24px}
+    section{padding:36px 24px; break-inside:avoid}
+    .card:hover{transform:none; box-shadow:var(--shadow)}
+    .card, .callout, .codebox, .nb, .stop{break-inside:avoid}
+    footer{padding:36px 24px}
+    body{font-size:12.5px}
+  }
 </style>
 </head>
 <body>
@@ -295,10 +311,10 @@
     <span class="eyebrow">By the numbers</span>
     <h2 class="section-title">How big is this thing? 📏</h2>
     <div class="stats" style="margin-top:34px">
-      <div class="stat"><div class="n" data-to="14">0</div><div class="l">mini-programs (services)</div></div>
-      <div class="stat"><div class="n" data-to="833">0</div><div class="l">files written</div></div>
-      <div class="stat"><div class="n" data-to="3">0</div><div class="l">smart AI helpers</div></div>
-      <div class="stat"><div class="n" data-to="41">0</div><div class="l">moving parts running together</div></div>
+      <div class="stat"><div class="n" data-to="14">14</div><div class="l">mini-programs (services)</div></div>
+      <div class="stat"><div class="n" data-to="833">833</div><div class="l">files written</div></div>
+      <div class="stat"><div class="n" data-to="3">3</div><div class="l">smart AI helpers</div></div>
+      <div class="stat"><div class="n" data-to="41">41</div><div class="l">moving parts running together</div></div>
       <div class="stat"><div class="n" data-to="0">0</div><div class="l">real patients used (all pretend!)</div></div>
     </div>
   </div>
@@ -350,18 +366,23 @@
   },{threshold:.15});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  // Count-up numbers when they appear
-  const countIO = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(!e.isIntersecting) return;
-      const el = e.target, to = +el.dataset.to; let cur = 0;
-      const step = Math.max(1, Math.round(to/40));
-      const tick = ()=>{ cur += step; if(cur>=to){el.textContent=to;} else {el.textContent=cur; requestAnimationFrame(tick);} };
-      if(to===0){ el.textContent='0'; } else { tick(); }
-      countIO.unobserve(el);
-    });
-  },{threshold:.6});
-  document.querySelectorAll('.stat .n').forEach(el=>countIO.observe(el));
+  // Count-up numbers when they appear (skipped when printing / reduced motion,
+  // so the PDF keeps the final values that are already in the HTML).
+  const noMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                || window.matchMedia('print').matches;
+  if(!noMotion){
+    const countIO = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(!e.isIntersecting) return;
+        const el = e.target, to = +el.dataset.to; let cur = 0;
+        const step = Math.max(1, Math.round(to/40));
+        const tick = ()=>{ cur += step; if(cur>=to){el.textContent=to;} else {el.textContent=cur; requestAnimationFrame(tick);} };
+        if(to===0){ el.textContent='0'; } else { el.textContent='0'; tick(); }
+        countIO.unobserve(el);
+      });
+    },{threshold:.6});
+    document.querySelectorAll('.stat .n').forEach(el=>countIO.observe(el));
+  }
 </script>
 </body>
 </html>
