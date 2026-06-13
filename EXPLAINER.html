@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MedFlow — Explained for Everyone 🏥✨</title>
+<style>
+  :root{
+    --teal:#0d9488; --teal-light:#5eead4; --teal-dark:#0f766e;
+    --slate:#1e293b; --slate-light:#475569; --slate-bg:#0f172a;
+    --amber:#f59e0b; --amber-light:#fcd34d;
+    --paper:#f8fafc; --card:#ffffff; --ink:#1e293b; --muted:#64748b;
+    --pink:#ec4899; --violet:#8b5cf6; --sky:#0ea5e9;
+    --radius:20px; --shadow:0 10px 40px -12px rgba(15,23,42,.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:var(--paper); line-height:1.65; overflow-x:hidden;
+  }
+  h1,h2,h3{line-height:1.2; font-weight:800; letter-spacing:-.02em}
+  section{padding:90px 24px; position:relative}
+  .wrap{max-width:1080px; margin:0 auto}
+  .eyebrow{
+    display:inline-block; font-size:.8rem; font-weight:800; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--teal-dark); background:var(--teal-light);
+    padding:6px 14px; border-radius:999px; margin-bottom:18px;
+  }
+  p.lead{font-size:1.22rem; color:var(--slate-light); max-width:720px}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(94,234,212,.25), transparent),
+      linear-gradient(160deg,#0f172a 0%, #134e4a 60%, #0f766e 100%);
+    color:#fff; overflow:hidden;
+  }
+  .hero h1{font-size:clamp(2.6rem,7vw,5rem); margin:10px 0 18px}
+  .hero h1 .grad{
+    background:linear-gradient(90deg,var(--teal-light),var(--amber-light));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .hero p{font-size:clamp(1.05rem,2.4vw,1.4rem); max-width:680px; color:#cbd5e1}
+  .hero .pill{
+    display:inline-block; margin-bottom:24px; padding:8px 18px; border-radius:999px;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    font-size:.85rem; letter-spacing:.08em; backdrop-filter:blur(6px);
+  }
+  .heart{font-size:3.4rem; display:inline-block; animation:beat 1.3s ease-in-out infinite; filter:drop-shadow(0 0 18px rgba(244,114,182,.6))}
+  @keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.15)}}
+  .scrollcue{position:absolute; bottom:28px; left:50%; transform:translateX(-50%); color:#94a3b8; font-size:.85rem; animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,10px)}}
+  /* floating icons */
+  .float-icons span{position:absolute; font-size:2rem; opacity:.5; animation:floaty 9s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-26px) rotate(8deg)}}
+
+  /* ---------- reveal on scroll ---------- */
+  .reveal{opacity:0; transform:translateY(34px); transition:all .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.show{opacity:1; transform:none}
+
+  /* ---------- generic cards ---------- */
+  .grid{display:grid; gap:22px}
+  .cols-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .cols-3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .card{
+    background:var(--card); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow);
+    border:1px solid #eef2f7; transition:transform .3s, box-shadow .3s;
+  }
+  .card:hover{transform:translateY(-6px); box-shadow:0 22px 50px -18px rgba(13,148,136,.35)}
+  .card .ic{font-size:2.4rem; display:block; margin-bottom:12px}
+  .card h3{font-size:1.2rem; margin-bottom:8px}
+  .card .code-note{
+    margin-top:14px; font-size:.86rem; color:var(--teal-dark); background:#f0fdfa;
+    border-left:3px solid var(--teal); padding:8px 12px; border-radius:8px;
+  }
+  .card .code-note b{color:var(--slate)}
+
+  .section-title{font-size:clamp(1.8rem,4vw,2.6rem); margin-bottom:14px}
+  .alt{background:linear-gradient(180deg,#fff, #f1f5f9)}
+
+  /* ---------- the "hospital" analogy strip ---------- */
+  .analogy{display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:center}
+  .analogy .big-emoji{font-size:clamp(5rem,16vw,11rem); text-align:center; line-height:1;
+    filter:drop-shadow(0 14px 26px rgba(13,148,136,.3))}
+  @media(max-width:760px){.analogy{grid-template-columns:1fr}}
+
+  /* ---------- pipeline journey ---------- */
+  .pipeline{position:relative; padding:30px 0}
+  .track{display:flex; justify-content:space-between; align-items:stretch; gap:14px; position:relative; flex-wrap:wrap}
+  .stop{flex:1 1 150px; background:#fff; border-radius:16px; padding:18px 14px; text-align:center;
+    box-shadow:var(--shadow); border:1px solid #eef2f7; position:relative; z-index:2}
+  .stop .e{font-size:2rem; display:block; margin-bottom:6px}
+  .stop b{display:block; font-size:.98rem}
+  .stop small{color:var(--muted); font-size:.8rem}
+  .flowline{height:6px; border-radius:999px; background:linear-gradient(90deg,var(--teal),var(--sky),var(--violet),var(--amber));
+    background-size:300% 100%; animation:slide 4s linear infinite; margin:26px 6px; position:relative}
+  @keyframes slide{0%{background-position:0 0}100%{background-position:300% 0}}
+  .dot{position:absolute; top:-7px; width:18px; height:18px; border-radius:50%; background:#fff;
+    border:3px solid var(--teal); box-shadow:0 0 0 4px rgba(94,234,212,.4);
+    animation:travel 4s linear infinite}
+  @keyframes travel{0%{left:0%}100%{left:100%}}
+
+  /* ---------- code explainer ---------- */
+  .codebox{background:var(--slate-bg); border-radius:16px; padding:24px; color:#e2e8f0;
+    font-family:"SF Mono",Menlo,Consolas,monospace; font-size:.9rem; overflow-x:auto; box-shadow:var(--shadow)}
+  .codebox .c-key{color:#5eead4} .codebox .c-fn{color:#fcd34d} .codebox .c-str{color:#f9a8d4}
+  .codebox .c-com{color:#64748b; font-style:italic}
+  .annot{display:grid; grid-template-columns:auto 1fr; gap:10px 14px; margin-top:18px}
+  .annot .tag{background:var(--amber); color:#3b2606; font-weight:800; border-radius:8px; padding:2px 10px; height:fit-content; font-size:.8rem; white-space:nowrap}
+
+  /* ---------- numbers ---------- */
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:20px; text-align:center}
+  .stat .n{font-size:clamp(2.2rem,6vw,3.4rem); font-weight:900; color:var(--teal)}
+  .stat .l{color:var(--muted); font-weight:600; font-size:.95rem}
+
+  /* ---------- callout ---------- */
+  .callout{background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-radius:24px;
+    padding:40px; text-align:center}
+  .callout h2{font-size:clamp(1.6rem,4vw,2.4rem); margin-bottom:10px}
+  .callout p{color:#d1fae5; max-width:640px; margin:0 auto; font-size:1.1rem}
+
+  footer{background:var(--slate-bg); color:#94a3b8; text-align:center; padding:50px 24px; font-size:.92rem}
+  footer a{color:var(--teal-light); text-decoration:none}
+  .tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+  .tagrow span{background:#f1f5f9; color:var(--slate); border-radius:999px; padding:4px 12px; font-size:.78rem; font-weight:600}
+  .nb{background:#fffbeb; border:1px solid #fde68a; border-radius:14px; padding:18px 22px; color:#92400e}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="float-icons" aria-hidden="true">
+    <span style="left:8%;top:20%">🩺</span><span style="left:86%;top:18%;animation-delay:1s">💉</span>
+    <span style="left:14%;top:70%;animation-delay:2s">🧬</span><span style="left:80%;top:66%;animation-delay:.5s">📊</span>
+    <span style="left:50%;top:12%;animation-delay:1.5s">🫁</span><span style="left:90%;top:44%;animation-delay:2.5s">🔬</span>
+    <span style="left:5%;top:46%;animation-delay:.8s">💊</span>
+  </div>
+  <span class="pill">A friendly tour • no coding knowledge needed</span>
+  <div class="heart">💗</div>
+  <h1>Meet <span class="grad">MedFlow</span></h1>
+  <p>A giant digital hospital "brain" that safely collects patient information, spots danger early,
+     and shows it to the right people — built entirely with <b>pretend (synthetic) patients</b>.</p>
+  <div class="scrollcue">scroll to explore ↓</div>
+</header>
+
+<!-- ============ ONE SENTENCE ============ -->
+<section>
+  <div class="wrap reveal">
+    <span class="eyebrow">The big idea in one breath</span>
+    <h2 class="section-title">What does MedFlow actually do?</h2>
+    <p class="lead">Imagine every machine in a hospital — heart monitors, lab computers, X-ray scanners,
+      smartwatches — all speaking <b>different languages</b> and scribbling notes on <b>different forms</b>.
+      MedFlow is the super-organized assistant that <b>translates everything into one language</b>,
+      <b>files it neatly</b>, <b>notices when a patient is getting sick</b>, and <b>locks the records away safely</b>
+      so only the right doctor can see them.</p>
+  </div>
+</section>
+
+<!-- ============ HOSPITAL ANALOGY ============ -->
+<section class="alt">
+  <div class="wrap reveal">
+    <span class="eyebrow">Think of it like…</span>
+    <h2 class="section-title">A very smart, very careful hospital receptionist 🧑‍⚕️</h2>
+    <div class="analogy" style="margin-top:30px">
+      <div class="big-emoji">🏥</div>
+      <div>
+        <p class="lead" style="margin-bottom:16px">A great receptionist does four things at once:</p>
+        <ul style="list-style:none; display:grid; gap:14px">
+          <li>🗣️ <b>Understands everyone</b> — no matter what device or form they bring.</li>
+          <li>🗂️ <b>Files it perfectly</b> — so anything can be found again in seconds.</li>
+          <li>🚨 <b>Raises a hand early</b> — "this patient looks like they're heading for trouble."</li>
+          <li>🔐 <b>Guards privacy fiercely</b> — locks records and writes down <i>exactly</i> who looked at what.</li>
+        </ul>
+        <p style="margin-top:18px; color:var(--muted)">MedFlow does all four — but for thousands of patients, instantly, around the clock.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE JOURNEY ============ -->
+<section>
+  <div class="wrap reveal">
+    <span class="eyebrow">Watch it work</span>
+    <h2 class="section-title">The journey of a single heartbeat 💓</h2>
+    <p class="lead">Follow one reading from a patient's wrist all the way to a doctor's screen. The glowing dot is your data travelling:</p>
+    <div class="pipeline" style="margin-top:34px">
+      <div class="track">
+        <div class="stop"><span class="e">⌚</span><b>Smartwatch</b><small>"Heart rate is 128 & climbing"</small></div>
+        <div class="stop"><span class="e">📥</span><b>Front door</b><small>MedFlow catches the reading</small></div>
+        <div class="stop"><span class="e">🗂️</span><b>The library</b><small>Filed away safely</small></div>
+        <div class="stop"><span class="e">🤖</span><b>Smart helper</b><small>"This looks like early sepsis!"</small></div>
+        <div class="stop"><span class="e">🔔</span><b>Doctor's screen</b><small>Instant alert pops up</small></div>
+      </div>
+      <div class="flowline"><div class="dot"></div><div class="dot" style="animation-delay:2s"></div></div>
+      <p style="text-align:center; color:var(--muted); margin-top:6px">⏱️ This whole trip happens in <b>seconds</b> — fast enough to help in a real emergency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BUILDING BLOCKS ============ -->
+<section class="alt">
+  <div class="wrap reveal">
+    <span class="eyebrow">Under the hood</span>
+    <h2 class="section-title">The 5 main parts (in plain English)</h2>
+    <p class="lead">Each part has a job. Hover the cards — the blue note explains the "coder words" simply.</p>
+    <div class="grid cols-3" style="margin-top:34px">
+      <div class="card">
+        <span class="ic">🚪</span><h3>The Front Doors</h3>
+        <p>Special doorways that understand hospital machines — heart monitors, labs, X-ray scanners, watches — and turn their messages into <b>one shared language</b>.</p>
+        <div class="code-note"><b>Coder words:</b> "FHIR, HL7, DICOM" are just <b>standard formats</b> hospitals agree to use — like everyone emailing in the same file type.</div>
+      </div>
+      <div class="card">
+        <span class="ic">📚</span><h3>The 3-Floor Library</h3>
+        <p>A giant storage building. <b>Ground floor</b> = raw papers as they arrive. <b>Middle floor</b> = cleaned & tidy. <b>Top floor</b> = organized for big research questions.</p>
+        <div class="code-note"><b>Coder words:</b> a "data lakehouse" with <b>bronze → silver → gold</b> layers. Each floor up is cleaner and more useful.</div>
+      </div>
+      <div class="card">
+        <span class="ic">🧠</span><h3>The Smart Helpers</h3>
+        <p>Trained assistants that have "seen" many patients and learned the early warning signs — for sepsis, for re-admission risk, and for reading chest X-rays.</p>
+        <div class="code-note"><b>Coder words:</b> "machine learning models." They <b>learn patterns from examples</b>, then make predictions on new patients.</div>
+      </div>
+      <div class="card">
+        <span class="ic">💻</span><h3>The Screens & Apps</h3>
+        <p>What people actually see: a <b>doctor dashboard</b>, a <b>patient website</b>, and a <b>phone app</b> — each showing the right info to the right person.</p>
+        <div class="code-note"><b>Coder words:</b> "front-end apps" built with React / Next.js — the friendly buttons-and-charts layer humans click on.</div>
+      </div>
+      <div class="card">
+        <span class="ic">🛡️</span><h3>The Security Guard</h3>
+        <p>Locks sensitive details, checks <b>who is allowed</b> to see each patient, and keeps a <b>tamper-proof logbook</b> of every single peek at a record.</p>
+        <div class="code-note"><b>Coder words:</b> encryption + "audit log." The logbook is <b>hash-chained</b> — if anyone edits an old entry, the chain visibly breaks.</div>
+      </div>
+      <div class="card">
+        <span class="ic">🕵️</span><h3>The Privacy Eraser</h3>
+        <p>Before data is used for research, it scrubs out names, phone numbers and addresses — so no one can tell <b>who</b> a record belongs to.</p>
+        <div class="code-note"><b>Coder words:</b> "de-identification" (HIPAA Safe Harbor). It removes the 18 details that could identify a real person.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ A LITTLE CODE ============ -->
+<section>
+  <div class="wrap reveal">
+    <span class="eyebrow">Peek at the magic</span>
+    <h2 class="section-title">"Show me some actual code!" 👀</h2>
+    <p class="lead">Don't worry — here's a tiny, made-up example. Code is really just a <b>recipe</b>: a list of clear
+      instructions a computer follows top to bottom.</p>
+    <div class="codebox" style="margin-top:26px">
+<span class="c-com"># RECIPE: decide if a patient might be getting sepsis</span><br><br>
+<span class="c-key">def</span> <span class="c-fn">check_sepsis_risk</span>(patient):<br>
+&nbsp;&nbsp;heart_rate = patient.heart_rate&nbsp;&nbsp;<span class="c-com"># grab the latest number</span><br>
+&nbsp;&nbsp;temperature = patient.temperature<br><br>
+&nbsp;&nbsp;<span class="c-key">if</span> heart_rate &gt; <span class="c-str">120</span> <span class="c-key">and</span> temperature &gt; <span class="c-str">38.5</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">return</span> <span class="c-str">"⚠️ HIGH RISK — alert the doctor now"</span><br>
+&nbsp;&nbsp;<span class="c-key">else</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">return</span> <span class="c-str">"✅ Looks okay — keep watching"</span>
+    </div>
+    <div class="annot">
+      <span class="tag">Line 1</span><div>A <b>comment</b> — a human note the computer ignores. Coders leave these to explain themselves.</div>
+      <span class="tag">def …</span><div><b>"def"</b> means "define a recipe." We named this recipe <i>check_sepsis_risk</i>.</div>
+      <span class="tag">if / else</span><div>A <b>decision</b>: <i>if</i> the numbers are scary, do one thing; <i>else</i> (otherwise) do another.</div>
+      <span class="tag">return</span><div>The recipe's <b>answer</b> — the result it hands back. In MedFlow the real version is far smarter (it learned from thousands of cases), but the idea is exactly this.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CODING CONCEPTS ============ -->
+<section class="alt">
+  <div class="wrap reveal">
+    <span class="eyebrow">Words coders throw around</span>
+    <h2 class="section-title">A mini-dictionary for non-coders 📖</h2>
+    <div class="grid cols-2" style="margin-top:30px">
+      <div class="card"><span class="ic">🧩</span><h3>A "service"</h3>
+        <p>One small program that does <b>one job well</b> — like one worker on a team. MedFlow has <b>14 workers</b>, each handling its own task and talking to the others.</p></div>
+      <div class="card"><span class="ic">🔌</span><h3>An "API"</h3>
+        <p>A <b>menu of requests</b> one program offers to others. Like ordering at a restaurant: you ask for what's on the menu, and you get it back — without seeing the kitchen.</p></div>
+      <div class="card"><span class="ic">🗄️</span><h3>A "database"</h3>
+        <p>A super-powered <b>filing cabinet</b> that can store millions of records and find any of them instantly.</p></div>
+      <div class="card"><span class="ic">📦</span><h3>A "container"</h3>
+        <p>A <b>sealed lunchbox</b> holding a program plus everything it needs to run — so it works the same on any computer, anywhere.</p></div>
+      <div class="card"><span class="ic">☁️</span><h3>The "cloud"</h3>
+        <p>Someone else's powerful computers, rented over the internet, so the system can grow to serve <b>more patients</b> on demand.</p></div>
+      <div class="card"><span class="ic">📡</span><h3>"Real-time"</h3>
+        <p>Things happening <b>right now</b>, live — like the sepsis alert popping onto a doctor's screen the instant the data arrives.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NUMBERS ============ -->
+<section>
+  <div class="wrap reveal">
+    <span class="eyebrow">By the numbers</span>
+    <h2 class="section-title">How big is this thing? 📏</h2>
+    <div class="stats" style="margin-top:34px">
+      <div class="stat"><div class="n" data-to="14">0</div><div class="l">mini-programs (services)</div></div>
+      <div class="stat"><div class="n" data-to="833">0</div><div class="l">files written</div></div>
+      <div class="stat"><div class="n" data-to="3">0</div><div class="l">smart AI helpers</div></div>
+      <div class="stat"><div class="n" data-to="41">0</div><div class="l">moving parts running together</div></div>
+      <div class="stat"><div class="n" data-to="0">0</div><div class="l">real patients used (all pretend!)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY IT MATTERS ============ -->
+<section class="alt">
+  <div class="wrap reveal">
+    <div class="callout">
+      <h2>Why build something this careful? 🤔</h2>
+      <p>In healthcare, a mistake or a leak can hurt a real person. So MedFlow was built to prove one thing:
+         that software can be <b>fast and smart</b> <i>and</i> <b>private and trustworthy</b> at the same time —
+         the gold standard for any serious medical system.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SYNTHETIC NOTE ============ -->
+<section>
+  <div class="wrap reveal">
+    <div class="nb">
+      <b>One important promise 🤝</b> — Every "patient" in MedFlow is <b>completely made up</b> by a generator
+      called Synthea. No real person's information is ever used. It's like a <b>flight simulator</b>:
+      realistic enough to learn and prove skills, but nobody is actually on board.
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="heart" style="font-size:2rem">💗</div>
+    <h3 style="color:#fff; margin:8px 0">MedFlow — Scalable Healthcare Data Platform</h3>
+    <p>A portfolio project showing how to build safe, smart software for hospitals.</p>
+    <div class="tagrow" style="justify-content:center">
+      <span>🏥 Healthcare data</span><span>🤖 AI / ML</span><span>🔐 Privacy & security</span>
+      <span>☁️ Cloud-native</span><span>📊 Big data</span><span>📱 Web & mobile</span>
+    </div>
+    <p style="margin-top:22px">Built by <b style="color:#fff">Yousef Hasan Hamda</b> ·
+      <a href="https://www.linkedin.com/in/yousef-hamda-1093a4352">LinkedIn</a> ·
+      For the full technical details, see the project's <a href="README.md">README</a>.</p>
+  </div>
+</footer>
+
+<script>
+  // Reveal sections as you scroll
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target);} });
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Count-up numbers when they appear
+  const countIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const el = e.target, to = +el.dataset.to; let cur = 0;
+      const step = Math.max(1, Math.round(to/40));
+      const tick = ()=>{ cur += step; if(cur>=to){el.textContent=to;} else {el.textContent=cur; requestAnimationFrame(tick);} };
+      if(to===0){ el.textContent='0'; } else { tick(); }
+      countIO.unobserve(el);
+    });
+  },{threshold:.6});
+  document.querySelectorAll('.stat .n').forEach(el=>countIO.observe(el));
+</script>
+</body>
+</html>
