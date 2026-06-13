@@ -1,0 +1,85 @@
+// MedFlow event contracts (protobuf source of truth for cross-language
+// consumers — Flink, Python ML services). The Node services currently use the
+// JSON/Zod twins in @medflow/shared-types; both encodings carry the same fields.
+syntax = "proto3";
+
+package medflow.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "io.medflow.events.v1";
+
+// One (possibly window-aggregated) vitals sample for a patient.
+// Topic: vitals.raw / vitals.aggregates
+message VitalsReading {
+  string patient_id = 1;
+  google.protobuf.Timestamp ts = 2;
+
+  // Optional vitals; `optional` keyword gives explicit presence tracking.
+  optional double heart_rate = 3;        // beats/min
+  optional double respiratory_rate = 4;  // breaths/min
+  optional double spo2 = 5;              // percent
+  optional double systolic_bp = 6;       // mmHg
+  optional double diastolic_bp = 7;      // mmHg
+  optional double temperature_c = 8;     // Celsius
+
+  // Producing device or pipeline stage, e.g. "wearable:fitband-04".
+  string source = 9;
+
+  // Window length in seconds when this is an aggregate; absent for raw samples.
+  optional uint32 window_seconds = 10;
+}
+
+enum AlertSeverity {
+  ALERT_SEVERITY_UNSPECIFIED = 0;
+  ALERT_SEVERITY_INFO = 1;
+  ALERT_SEVERITY_WARNING = 2;
+  ALERT_SEVERITY_CRITICAL = 3;
+}
+
+enum RiskBand {
+  RISK_BAND_UNSPECIFIED = 0;
+  RISK_BAND_LOW = 1;
+  RISK_BAND_MEDIUM = 2;
+  RISK_BAND_HIGH = 3;
+}
+
+// A SHAP-style feature attribution attached to model outputs.
+message FeatureContribution {
+  string feature = 1;
+  double shap_value = 2;
+  optional double value = 3;
+}
+
+// Clinically actionable sepsis early-warning alert. Topic: alerts
+message SepsisAlert {
+  string id = 1; // uuid
+  string patient_id = 2;
+  optional string encounter_id = 3;
+  google.protobuf.Timestamp ts = 4;
+  AlertSeverity severity = 5;
+  RiskBand band = 6;
+  double score = 7; // [0, 1]
+  // PHI-free human-readable summary, e.g. "Sepsis risk HIGH (0.82)".
+  string message = 8;
+  string model = 9;
+  string model_version = 10;
+  repeated FeatureContribution top_contributors = 11;
+}
+
+// Immutable record of a single model inference. Topic: predictions
+message PredictionLogged {
+  string id = 1; // uuid
+  // Model family: "sepsis" | "readmission" | "chest-xray".
+  string model = 2;
+  string model_version = 3;
+  string patient_id = 4;
+  optional string encounter_id = 5;
+  google.protobuf.Timestamp ts = 6;
+  double score = 7; // [0, 1]
+  RiskBand band = 8;
+  repeated FeatureContribution top_contributors = 9;
+  // Serving metadata (canary flag, latency ms, feature freshness) — never PHI.
+  map<string, string> metadata = 10;
+}

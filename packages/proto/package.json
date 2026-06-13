@@ -1,0 +1,17 @@
+{
+  "name": "@medflow/proto",
+  "version": "0.1.0",
+  "description": "Protobuf schemas for MedFlow Kafka events (VitalsReading, SepsisAlert, PredictionLogged). Stubs generated in CI via buf.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "lint": "buf lint",
+    "typecheck": "echo \"@medflow/proto: nothing to typecheck (stubs generated in CI)\"",
+    "test": "echo \"@medflow/proto: no tests (schema-only package; buf lint covers style)\"",
+    "build": "buf generate",
+    "dev": "buf lint --error-format=msvs"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "1.32.2"
+  }
+}

@@ -1,0 +1,17 @@
+# Code generation for medflow.v1 — run `buf generate` (CI does this; stubs are
+# NOT committed, see gen/README.md).
+version: v2
+plugins:
+  # TypeScript (ECMAScript messages) for Node services.
+  - remote: buf.build/bufbuild/es:v1.10.0
+    out: gen/ts
+    opt:
+      - target=ts
+  # Python for ml-serving / Flink PyFlink jobs.
+  - remote: buf.build/protocolbuffers/python:v27.1
+    out: gen/python
+  - remote: buf.build/protocolbuffers/pyi:v27.1
+    out: gen/python
+  # Java for the Flink streaming jobs.
+  - remote: buf.build/protocolbuffers/java:v27.1
+    out: gen/java
