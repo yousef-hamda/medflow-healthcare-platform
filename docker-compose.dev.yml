@@ -1,0 +1,105 @@
+# Development overlay: hot reload for app services, debug ports, relaxed logging.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+services:
+  # Node/web services use the repo-root build context (pnpm workspace) and the
+  # `dev` Dockerfile stage. Bind mounts target the in-image app path
+  # (/app/apps/<svc>) so hot reload sees host edits without masking node_modules.
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+      target: dev
+    command: ["pnpm", "start:dev"]
+    volumes:
+      - ./apps/api-gateway/src:/app/apps/api-gateway/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  realtime-gateway:
+    build:
+      context: .
+      dockerfile: apps/realtime-gateway/Dockerfile
+      target: dev
+    command: ["pnpm", "dev"]
+    volumes:
+      - ./apps/realtime-gateway/src:/app/apps/realtime-gateway/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  cds-hooks-service:
+    build:
+      context: .
+      dockerfile: apps/cds-hooks-service/Dockerfile
+      target: dev
+    command: ["pnpm", "dev"]
+    volumes:
+      - ./apps/cds-hooks-service/src:/app/apps/cds-hooks-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: apps/audit-service/Dockerfile
+      target: dev
+    command: ["pnpm", "dev"]
+    volumes:
+      - ./apps/audit-service/src:/app/apps/audit-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  clinician-dashboard:
+    build:
+      context: .
+      dockerfile: apps/clinician-dashboard/Dockerfile
+      target: dev
+    command: ["pnpm", "dev"]
+    volumes:
+      - ./apps/clinician-dashboard/src:/app/apps/clinician-dashboard/src
+      - ./apps/clinician-dashboard/public:/app/apps/clinician-dashboard/public
+
+  patient-portal:
+    build:
+      context: .
+      dockerfile: apps/patient-portal/Dockerfile
+      target: dev
+    command: ["pnpm", "dev", "--port", "3001"]
+    volumes:
+      - ./apps/patient-portal/src:/app/apps/patient-portal/src
+      - ./apps/patient-portal/public:/app/apps/patient-portal/public
+
+  dicom-receiver:
+    volumes:
+      - ./apps/dicom-receiver/src:/app/src
+    environment:
+      LOG_LEVEL: DEBUG
+
+  wearables-ingester:
+    command:
+      ["uvicorn", "medflow_wearables.main:app", "--host", "0.0.0.0", "--port", "8092", "--reload"]
+    volumes:
+      - ./apps/wearables-ingester/src:/app/src
+    environment:
+      LOG_LEVEL: DEBUG
+
+  deid-service:
+    command: ["uvicorn", "medflow_deid.main:app", "--host", "0.0.0.0", "--port", "8093", "--reload"]
+    volumes:
+      - ./apps/deid-service/src:/app/src
+    environment:
+      LOG_LEVEL: DEBUG
+
+  ml-serving:
+    command: ["uvicorn", "medflow_serving.main:app", "--host", "0.0.0.0", "--port", "8094", "--reload"]
+    volumes:
+      - ./apps/ml-serving/src:/app/src
+    environment:
+      LOG_LEVEL: DEBUG

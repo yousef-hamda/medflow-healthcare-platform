@@ -1,0 +1,20 @@
+# yamllint config for MedFlow. Helm templates (Go templating) and k8s manifests
+# are excluded because they are not plain YAML until rendered.
+extends: relaxed
+
+rules:
+  line-length:
+    max: 160
+    level: warning
+  document-start: disable
+  comments:
+    min-spaces-from-content: 1
+  truthy:
+    allowed-values: ["true", "false", "on", "off"]
+    check-keys: false
+
+ignore: |
+  infra/helm/
+  node_modules/
+  .venv/
+  **/templates/

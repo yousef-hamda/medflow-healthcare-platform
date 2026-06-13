@@ -1,0 +1,81 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.pnpm-store/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Java
+target/
+.gradle/
+build/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# ML artifacts (tracked via MLflow/DVC, never git)
+mlruns/
+mlartifacts/
+ml/data/raw/
+ml/data/chestxray14/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bentomodel
+
+# Data / lake local volumes
+.volumes/
+*.duckdb
+data/airflow/logs/
+data/great_expectations/uncommitted/
+
+# Secrets & env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!**/test/**/*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.auto.tfvars.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Expo / React Native
+.expo/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# Misc
+*.log
+tmp/
+.cache/
