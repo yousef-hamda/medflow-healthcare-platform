@@ -1,0 +1,23 @@
+# Feast feature store configuration for MedFlow (Feast 0.36+).
+#
+# All features are derived from SYNTHETIC data (Synthea, seed 42). The offline
+# store reads parquet written by `medflow_ml.jobs.backfill_features` from the
+# MinIO-backed lakehouse; the online store is the dev Redis instance.
+project: medflow
+provider: local
+
+registry:
+  registry_type: sql
+  path: data/registry.db
+
+online_store:
+  type: redis
+  connection_string: redis:6379
+
+offline_store:
+  type: file
+
+entity_key_serialization_version: 2
+
+# Materialized feature data is considered stale after this TTL when serving.
+coerce_tz_aware: true
