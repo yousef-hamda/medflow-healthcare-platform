@@ -32,6 +32,7 @@
 > ### 📘 Not a coder? Read this first — [`EXPLAINER.html`](EXPLAINER.html)
 > An illustrated, animated, plain-English walkthrough of the whole project — **no technical
 > background needed.** Inside you'll find:
+> - 🎬 a stylized AI-generated cinematic intro (Higgsfield) — illustrative, clearly not the real app
 > - 🏥 a one-sentence summary and an everyday "smart hospital receptionist" analogy
 > - 💓 an animated *"journey of a heartbeat"* showing how data becomes a live alert
 > - 🧩 the 5 main parts explained simply, each with a "what the coder words mean" note
