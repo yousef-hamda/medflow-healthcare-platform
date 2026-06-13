@@ -1,0 +1,108 @@
+# Local overrides for kind / minikube.
+#   helm upgrade --install medflow infra/helm/medflow \
+#     -n medflow --create-namespace -f infra/helm/medflow/values-local.yaml
+#
+# Single replicas, modest resources, no Istio sidecars, plain NodePort
+# access instead of Ingress/Gateway. NOTE: the kind config
+# (infra/k8s/kind-config.yaml) only maps NodePorts 30080/30443 to the host;
+# for the other NodePorts use `kubectl port-forward` or add mappings.
+
+global:
+  environment: local
+  imagePullPolicy: IfNotPresent
+
+istio:
+  sidecarInject: false
+
+ingress:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+hpa:
+  api-gateway:
+    enabled: false
+  ml-serving:
+    enabled: false
+
+services:
+  fhir-server:
+    replicas: 1
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 1Gi }
+
+  hl7v2-ingester:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  dicom-receiver:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 512Mi }
+
+  wearables-ingester:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  deid-service:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+
+  ml-serving:
+    replicas: 1
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 1Gi }
+
+  audit-service:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  cds-hooks-service:
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  api-gateway:
+    replicas: 1
+    serviceType: NodePort
+    nodePort: 30400
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+
+  realtime-gateway:
+    replicas: 1
+    serviceType: NodePort
+    nodePort: 30401
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  clinician-dashboard:
+    replicas: 1
+    serviceType: NodePort
+    nodePort: 30300
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+
+  patient-portal:
+    replicas: 1
+    serviceType: NodePort
+    nodePort: 30301
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }

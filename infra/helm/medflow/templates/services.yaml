@@ -1,0 +1,164 @@
+{{- /*
+One Deployment + Service per entry under .Values.services.
+
+Conventions consumed from values.yaml per service:
+  enabled, replicas, port, extraPorts, healthPath, metricsPath,
+  resources, env, secretEnv (ENV_NAME -> key in the shared Secret),
+  serviceType / nodePort (used by values-local.yaml).
+
+Notes:
+  - secretEnv entries are rendered BEFORE env entries so that
+    $(DATABASE_PASSWORD)-style interpolation in env values resolves.
+  - replicas is omitted when an HPA is enabled for the service so the
+    autoscaler owns the count.
+  - Pod security fields satisfy the "restricted" Pod Security Standard
+    enforced on the medflow namespace (infra/k8s/namespace.yaml).
+*/ -}}
+{{- $root := . -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $hpaAll := $root.Values.hpa | default dict }}
+{{- $hpa := index $hpaAll $name | default dict }}
+{{- /* metricsPath: explicit "" disables scrape annotations; absent means /metrics */ -}}
+{{- $metricsPath := "/metrics" }}
+{{- if hasKey $svc "metricsPath" }}
+{{- $metricsPath = $svc.metricsPath }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "medflow.labels" $root | nindent 4 }}
+    {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+spec:
+  {{- if not $hpa.enabled }}
+  replicas: {{ $svc.replicas | default 1 }}
+  {{- end }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "medflow.labels" $root | nindent 8 }}
+        {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 8 }}
+      annotations:
+        # Restart pods when shared config/secrets change.
+        checksum/config: {{ include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+        checksum/secrets: {{ include (print $root.Template.BasePath "/secrets.yaml") $root | sha256sum }}
+        # Istio sidecar toggle (namespace label opts in; this opts out per-pod).
+        sidecar.istio.io/inject: {{ $root.Values.istio.sidecarInject | quote }}
+        {{- if $metricsPath }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ $metricsPath | quote }}
+        prometheus.io/port: {{ $svc.port | quote }}
+        {{- end }}
+    spec:
+      {{- with $root.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $root.Values.serviceAccount.create }}
+      serviceAccountName: {{ $name }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ $name }}
+          image: {{ include "medflow.image" (dict "root" $root "name" $name) }}
+          imagePullPolicy: {{ $root.Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+              protocol: TCP
+            {{- range $svc.extraPorts }}
+            - name: {{ .name }}
+              containerPort: {{ .port }}
+              protocol: TCP
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: medflow-config
+            - secretRef:
+                name: {{ $root.Values.secrets.name }}
+          env:
+            {{- range $envName, $secretKey := $svc.secretEnv }}
+            - name: {{ $envName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $root.Values.secrets.name }}
+                  key: {{ $secretKey }}
+            {{- end }}
+            {{- range $envName, $envValue := $svc.env }}
+            - name: {{ $envName }}
+              value: {{ $envValue | quote }}
+            {{- end }}
+          {{- with $svc.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if $svc.healthPath }}
+          startupProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ $svc.healthPath }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "medflow.labels" $root | nindent 4 }}
+    {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+spec:
+  type: {{ $svc.serviceType | default "ClusterIP" }}
+  selector:
+    {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $svc.port }}
+      targetPort: http
+      protocol: TCP
+      {{- if eq ($svc.serviceType | default "ClusterIP") "NodePort" }}
+      {{- with $svc.nodePort }}
+      nodePort: {{ . }}
+      {{- end }}
+      {{- end }}
+    {{- range $svc.extraPorts }}
+    - name: {{ .name }}
+      port: {{ .port }}
+      targetPort: {{ .name }}
+      protocol: TCP
+    {{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,60 @@
+# Grafana datasource provisioning for the MedFlow local stack.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: medflow-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: medflow-tempo
+
+  - name: Loki
+    uid: medflow-loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      # Logs -> traces: any trace_id in a log line links to Tempo.
+      derivedFields:
+        - name: TraceID
+          datasourceUid: medflow-tempo
+          matcherRegex: '"?trace_id"?[=:]"?(\w+)"?'
+          url: "$${__value.raw}"
+
+  - name: Tempo
+    uid: medflow-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      # Traces -> logs in Loki, matched on service name within +/-1h.
+      tracesToLogsV2:
+        datasourceUid: medflow-loki
+        spanStartTimeShift: "-1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: service.name
+            value: service_name
+      tracesToMetrics:
+        datasourceUid: medflow-prometheus
+        tags:
+          - key: service.name
+            value: service
+      serviceMap:
+        datasourceUid: medflow-prometheus
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: medflow-loki

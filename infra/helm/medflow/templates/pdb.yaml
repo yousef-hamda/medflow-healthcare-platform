@@ -1,0 +1,33 @@
+{{- /*
+PodDisruptionBudgets for every enabled service that runs more than one
+replica (or is autoscaled with minReplicas > 1), so voluntary disruptions
+(node drains, upgrades) never take a service fully offline.
+*/ -}}
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- $root := . -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $hpaAll := $root.Values.hpa | default dict }}
+{{- $hpa := index $hpaAll $name | default dict }}
+{{- $count := int ($svc.replicas | default 1) }}
+{{- if $hpa.enabled }}
+{{- $count = int $hpa.minReplicas }}
+{{- end }}
+{{- if gt $count 1 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "medflow.labels" $root | nindent 4 }}
+    {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+spec:
+  maxUnavailable: {{ $root.Values.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

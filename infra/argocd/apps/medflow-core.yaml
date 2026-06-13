@@ -1,0 +1,41 @@
+# Wave 1 — the MedFlow application layer (interop, de-identification, ML
+# serving, audit, gateways, frontends). Rendered from the in-repo Helm chart
+# at infra/helm/medflow. Syncs after observability (wave 0) so telemetry is
+# already flowing, and before the data plane (wave 2).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: medflow-core
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: medflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: medflow
+  source:
+    repoURL: https://github.com/yousef-hamda/medflow.git
+    targetRevision: main
+    path: infra/helm/medflow
+    helm:
+      releaseName: medflow
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: medflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

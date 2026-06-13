@@ -1,0 +1,164 @@
+# MedFlow custom Falco ruleset.
+#
+# These rules extend the upstream falcosecurity ruleset with detections tuned
+# to the MedFlow threat model: a PHI-handling platform where the audit trail
+# is sacrosanct, secrets live in Vault, and container images are tightly
+# scoped. Each rule emits to falcosidekick -> Loki (see values-falco.yaml).
+#
+# Macros / lists below are defined locally so this file is self-contained and
+# does not depend on rule ordering in the base ruleset.
+
+#######################################################################
+# Lists
+#######################################################################
+- list: medflow_shell_binaries
+  items: [bash, sh, zsh, dash, ash, ksh, csh, tcsh, fish]
+
+- list: medflow_image_repositories
+  items:
+    - ghcr.io/yousef-hamda/medflow
+    - medflow
+
+- list: medflow_cryptominer_procs
+  items:
+    - xmrig
+    - minerd
+    - cpuminer
+    - ccminer
+    - cgminer
+    - bfgminer
+    - ethminer
+    - nbminer
+    - phoenixminer
+    - xmr-stak
+    - t-rex
+
+# Egress endpoints the audit-service is legitimately allowed to reach: the
+# object store (S3 / MinIO) it writes WORM audit logs to. Anything else is
+# treated as exfiltration / C2.
+- list: medflow_audit_egress_allowlist
+  items:
+    - s3.amazonaws.com
+    - minio
+    - minio.medflow-data
+    - minio.medflow-data.svc.cluster.local
+
+# Process names trusted to read Vault token / secret material.
+- list: medflow_vault_trusted_procs
+  items: [vault, vault-agent, consul-template]
+
+#######################################################################
+# Macros
+#######################################################################
+- macro: medflow_container
+  condition: >
+    container.id != host and
+    container.image.repository in (medflow_image_repositories)
+
+- macro: medflow_audit_container
+  condition: >
+    container.id != host and
+    (k8s.pod.label.app = "audit-service" or
+     container.image.repository endswith "medflow/audit-service")
+
+- macro: outbound_conn
+  condition: >
+    (evt.type in (connect) and evt.dir = < and
+     fd.typechar = 4 and fd.ip != "0.0.0.0" and
+     not fd.net in ("127.0.0.0/8"))
+
+#######################################################################
+# Rules
+#######################################################################
+
+- rule: Shell spawned in MedFlow container
+  desc: >
+    An interactive shell binary was executed inside a MedFlow application
+    container. MedFlow images run a single service process and ship no shell
+    workflow, so a shell almost always indicates a compromised container,
+    a debug exec, or lateral movement against PHI workloads.
+  condition: >
+    spawned_process and
+    medflow_container and
+    proc.name in (medflow_shell_binaries)
+  output: >
+    Shell spawned in MedFlow container
+    (user=%user.name uid=%user.uid shell=%proc.name parent=%proc.pname
+     cmdline=%proc.cmdline image=%container.image.repository:%container.image.tag
+     container=%container.name pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: WARNING
+  tags: [medflow, container, shell, mitre_execution, T1059]
+
+- rule: Unexpected audit-service egress
+  desc: >
+    The audit-service opened an outbound network connection to a destination
+    that is not the approved object store (S3 / MinIO). The audit-service must
+    only ship immutable audit logs to WORM storage; any other egress suggests
+    exfiltration of the audit trail or C2 beaconing.
+  condition: >
+    outbound_conn and
+    medflow_audit_container and
+    not fd.sip.name in (medflow_audit_egress_allowlist) and
+    not fd.sip in (medflow_audit_egress_allowlist)
+  output: >
+    Unexpected audit-service egress
+    (proc=%proc.name connection=%fd.name dest_ip=%fd.sip dest_port=%fd.sport
+     pod=%k8s.pod.name ns=%k8s.ns.name image=%container.image.repository)
+  priority: CRITICAL
+  tags: [medflow, network, audit, exfiltration, mitre_exfiltration, T1041]
+
+- rule: Vault token file read by unexpected process
+  desc: >
+    A process other than the Vault agent toolchain read a Vault token or
+    secret file (e.g. .vault-token, /vault/secrets/*). Reading raw token
+    material out-of-band points at secret theft or a sidecar escape.
+  condition: >
+    open_read and
+    container and
+    (fd.name endswith "/.vault-token" or
+     fd.name startswith "/vault/secrets/" or
+     fd.name startswith "/vault/token") and
+    not proc.name in (medflow_vault_trusted_procs)
+  output: >
+    Vault token file read by unexpected process
+    (file=%fd.name proc=%proc.name pproc=%proc.pname user=%user.name
+     cmdline=%proc.cmdline container=%container.name pod=%k8s.pod.name
+     ns=%k8s.ns.name)
+  priority: CRITICAL
+  tags: [medflow, secrets, vault, mitre_credential_access, T1552]
+
+- rule: Write under /etc in container
+  desc: >
+    A file under /etc was opened for writing inside a container. MedFlow
+    images are immutable and configured via env/ConfigMaps, so writing to
+    /etc (passwd, cron, ld.so.preload, ssh config, etc.) indicates tampering
+    or persistence.
+  condition: >
+    open_write and
+    container and
+    fd.name startswith /etc/ and
+    not proc.name in (medflow_vault_trusted_procs)
+  output: >
+    Write under /etc in container
+    (file=%fd.name proc=%proc.name pproc=%proc.pname user=%user.name
+     cmdline=%proc.cmdline image=%container.image.repository
+     container=%container.name pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: ERROR
+  tags: [medflow, container, filesystem, persistence, mitre_persistence, T1543]
+
+- rule: Cryptominer process name
+  desc: >
+    A process whose name matches a known cryptocurrency miner was launched.
+    Mining inside MedFlow infrastructure is never legitimate and signals a
+    compromised workload abusing cluster compute.
+  condition: >
+    spawned_process and
+    container and
+    proc.name in (medflow_cryptominer_procs)
+  output: >
+    Cryptominer process name detected
+    (proc=%proc.name cmdline=%proc.cmdline parent=%proc.pname user=%user.name
+     image=%container.image.repository container=%container.name
+     pod=%k8s.pod.name ns=%k8s.ns.name)
+  priority: CRITICAL
+  tags: [medflow, container, cryptomining, mitre_impact, T1496]

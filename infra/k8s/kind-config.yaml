@@ -1,0 +1,29 @@
+# kind cluster for local Kubernetes testing of the MedFlow Helm chart.
+#   kind create cluster --name medflow --config infra/k8s/kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: medflow
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      # Istio ingressgateway (NodePort) -> host
+      - containerPort: 30080
+        hostPort: 8090
+        protocol: TCP
+      - containerPort: 30443
+        hostPort: 8443
+        protocol: TCP
+  - role: worker
+  - role: worker
+networking:
+  # Default kindnet has no NetworkPolicy support; install Calico after create
+  # if you want infra/k8s/networkpolicies.yaml enforced locally.
+  disableDefaultCNI: false
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16

@@ -1,0 +1,38 @@
+{{- /*
+Optional plain-Ingress entry point (nginx or similar). Disabled by default:
+the primary entry point is the Istio Gateway + VirtualServices under
+infra/istio/. Enable this only on clusters without Istio.
+*/ -}}
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medflow
+  labels:
+    {{- include "medflow.labels" . | nindent 4 }}
+    app.kubernetes.io/name: medflow
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .service }}
+                port:
+                  number: {{ .port }}
+    {{- end }}
+{{- end }}

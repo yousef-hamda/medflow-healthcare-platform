@@ -1,0 +1,55 @@
+# AppProject scoping everything MedFlow may deploy: which repos it can pull
+# from, which namespaces it can touch, and which cluster-scoped resources it
+# may create. Keeps a compromised app manifest from escaping the platform's
+# blast radius.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: medflow
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: medflow
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: MedFlow healthcare data platform
+
+  sourceRepos:
+    # Monorepo (helm chart, k8s manifests, istio policy).
+    - https://github.com/yousef-hamda/medflow.git
+    # Upstream charts for the data + observability planes.
+    - https://charts.bitnami.com/bitnami
+    - https://prometheus-community.github.io/helm-charts
+    - https://grafana.github.io/helm-charts
+    - https://falcosecurity.github.io/charts
+
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: medflow
+    - server: https://kubernetes.default.svc
+      namespace: medflow-data
+    - server: https://kubernetes.default.svc
+      namespace: medflow-observability
+    - server: https://kubernetes.default.svc
+      namespace: falco
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+
+  namespaceResourceBlacklist:
+    # ResourceQuotas/LimitRanges are owned by cluster admins (infra/k8s/),
+    # not by application syncs.
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  orphanedResources:
+    warn: true

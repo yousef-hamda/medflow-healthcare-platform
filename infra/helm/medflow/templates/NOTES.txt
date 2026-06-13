@@ -1,0 +1,48 @@
+MedFlow {{ .Chart.Version }} deployed to namespace {{ .Release.Namespace }} (environment: {{ .Values.global.environment }}).
+
+Services rendered from .Values.services:
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+  - {{ $name }} (port {{ $svc.port }})
+{{- end }}
+{{- end }}
+
+Entry points
+------------
+{{- if .Values.ingress.enabled }}
+Ingress ({{ .Values.ingress.className }}):
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }} -> {{ .service }}:{{ .port }}
+{{- end }}
+{{- else }}
+Ingress is disabled. The primary entry point is the Istio Gateway:
+  kubectl apply -f infra/istio/
+Hosts: app.medflow.example.com (dashboard), portal.medflow.example.com
+(patient portal), api.medflow.example.com (API gateway).
+{{- end }}
+
+Local / kind quick checks
+-------------------------
+  kubectl -n {{ .Release.Namespace }} get pods
+  kubectl -n {{ .Release.Namespace }} port-forward svc/api-gateway 4000:4000
+  kubectl -n {{ .Release.Namespace }} port-forward svc/clinician-dashboard 3000:3000
+
+Secrets
+-------
+{{- if .Values.secrets.create }}
+WARNING: chart-managed Secret "{{ .Values.secrets.name }}" contains DEV
+PLACEHOLDER credentials. For production, set secrets.create=false and deliver
+the same Secret via external-secrets (Vault / AWS Secrets Manager).
+{{- else }}
+secrets.create=false — expecting Secret "{{ .Values.secrets.name }}" to be
+provided externally (external-secrets / Vault / AWS Secrets Manager).
+{{- end }}
+
+{{- if .Values.istio.sidecarInject }}
+
+Istio sidecar injection is ON. Apply mesh policy after install:
+  kubectl apply -f infra/istio/
+{{- else }}
+
+Istio sidecar injection is OFF (local mode).
+{{- end }}

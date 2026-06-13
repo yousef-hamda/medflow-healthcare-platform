@@ -1,0 +1,74 @@
+# Host-based routing behind medflow-gateway.
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: clinician-dashboard
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  hosts:
+    - app.medflow.example.com
+  gateways:
+    - medflow/medflow-gateway
+  http:
+    - route:
+        - destination:
+            host: clinician-dashboard.medflow.svc.cluster.local
+            port:
+              number: 3000
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: patient-portal
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  hosts:
+    - portal.medflow.example.com
+  gateways:
+    - medflow/medflow-gateway
+  http:
+    - route:
+        - destination:
+            host: patient-portal.medflow.svc.cluster.local
+            port:
+              number: 3001
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: api-gateway
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  hosts:
+    - api.medflow.example.com
+  gateways:
+    - medflow/medflow-gateway
+  http:
+    # WebSocket / SSE realtime channel.
+    - match:
+        - uri:
+            prefix: /realtime
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: realtime-gateway.medflow.svc.cluster.local
+            port:
+              number: 4001
+      timeout: 0s
+    # Everything else (REST, GraphQL, /fhir proxy) -> api-gateway.
+    - route:
+        - destination:
+            host: api-gateway.medflow.svc.cluster.local
+            port:
+              number: 4000
+      retries:
+        attempts: 2
+        perTryTimeout: 5s
+        retryOn: connect-failure,refused-stream,503

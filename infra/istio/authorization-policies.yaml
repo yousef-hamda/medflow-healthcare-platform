@@ -1,0 +1,177 @@
+# Layer-7 authorization for the medflow namespace.
+#
+# Model: deny-by-default, then explicit ALLOW policies per workload. The
+# identities below are SPIFFE principals derived from the per-service
+# ServiceAccounts created by the Helm chart (templates/serviceaccount.yaml).
+# Kubelet health probes are unaffected: Istio rewrites them to the agent
+# port (15020), which bypasses AuthorizationPolicy.
+#
+# ──────────────────────────────────────────────────────────────────────────
+# 0. Deny everything not explicitly allowed.
+# An ALLOW policy with empty spec matches all workloads with no rules,
+# which denies all requests in the namespace.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all-default
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec: {}
+---
+# 1. Frontends are reachable only via the ingress gateway.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: frontends-from-ingressgateway
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [clinician-dashboard, patient-portal]
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+---
+# 2. api-gateway accepts traffic from the ingress gateway and the realtime
+#    gateway (token introspection callbacks).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: api-gateway-ingress
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+              - cluster.local/ns/medflow/sa/realtime-gateway
+---
+# 3. realtime-gateway: ingress gateway (websocket upgrade) + api-gateway fanout.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: realtime-gateway-ingress
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: realtime-gateway
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+              - cluster.local/ns/medflow/sa/api-gateway
+---
+# 4. Interop / clinical core (fhir-server, deid-service, cds-hooks-service,
+#    ingesters): callable by the in-namespace service identities that
+#    legitimately orchestrate them.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: core-services-internal
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - fhir-server
+          - deid-service
+          - cds-hooks-service
+          - hl7v2-ingester
+          - dicom-receiver
+          - wearables-ingester
+  rules:
+    - from:
+        - source:
+            namespaces: [medflow]
+    - from:
+        - source:
+            # Flink stream jobs (data plane) enrich/replay clinical events.
+            principals:
+              - cluster.local/ns/medflow-data/sa/flink
+---
+# 5. ml-serving: clinical risk scores may ONLY be requested by the API
+#    gateway, the CDS Hooks service, and the Flink scoring pipeline.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: ml-serving-callers
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ml-serving
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/medflow/sa/api-gateway
+              - cluster.local/ns/medflow/sa/cds-hooks-service
+              - cluster.local/ns/medflow-data/sa/flink
+---
+# 6. audit-service: append-only by design.
+#    - Service identities may POST audit events (write path).
+#    - Only api-gateway may GET (the audit-trail review UI).
+#    Nothing in the mesh can PUT/PATCH/DELETE audit records.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: audit-service-append-only
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: audit-service
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/medflow/sa/api-gateway
+              - cluster.local/ns/medflow/sa/fhir-server
+              - cluster.local/ns/medflow/sa/hl7v2-ingester
+              - cluster.local/ns/medflow/sa/dicom-receiver
+              - cluster.local/ns/medflow/sa/wearables-ingester
+              - cluster.local/ns/medflow/sa/deid-service
+              - cluster.local/ns/medflow/sa/ml-serving
+              - cluster.local/ns/medflow/sa/cds-hooks-service
+              - cluster.local/ns/medflow/sa/realtime-gateway
+      to:
+        - operation:
+            methods: [POST]
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/medflow/sa/api-gateway
+      to:
+        - operation:
+            methods: [GET]

@@ -1,0 +1,29 @@
+# MedFlow namespaces. App workloads land in medflow; observability and data
+# planes are isolated so NetworkPolicies and quotas can differ per plane.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+    istio-injection: enabled
+    # PHI-handling namespace: enforce the restricted Pod Security Standard.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medflow-observability
+  labels:
+    app.kubernetes.io/part-of: medflow
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medflow-data
+  labels:
+    app.kubernetes.io/part-of: medflow
+    pod-security.kubernetes.io/enforce: baseline

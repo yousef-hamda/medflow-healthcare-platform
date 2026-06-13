@@ -1,0 +1,41 @@
+# Wave 0 — observability plane must be healthy before app/data workloads so
+# that metrics, logs and traces are captured from the very first sync.
+#
+# NOTE: kube-prometheus-stack itself is a large upstream chart. Rather than
+# vendoring it, this Application points at the in-repo observability manifests
+# (Prometheus rules, Grafana dashboards/datasources, Loki, Tempo configs).
+# To run the full kube-prometheus-stack instead, swap the source below for:
+#   source:
+#     repoURL: https://prometheus-community.github.io/helm-charts
+#     chart: kube-prometheus-stack
+#     targetRevision: "*"   # pin in prod
+# (that repo is already whitelisted in infra/argocd/project.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: medflow-observability
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: medflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: medflow
+  source:
+    repoURL: https://github.com/yousef-hamda/medflow.git
+    targetRevision: main
+    path: infra/prometheus
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: medflow-observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true

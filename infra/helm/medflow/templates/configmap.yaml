@@ -1,0 +1,20 @@
+{{- /*
+Shared non-secret configuration, injected into every service via envFrom
+(see templates/services.yaml). Values come from .Values.config plus a few
+globals so every workload agrees on environment + telemetry endpoints.
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: medflow-config
+  labels:
+    {{- include "medflow.labels" . | nindent 4 }}
+    app.kubernetes.io/name: medflow-config
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.global.otelEndpoint | quote }}
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,0 +1,38 @@
+{{- /*
+HorizontalPodAutoscalers, driven by .Values.hpa.<service-name> entries
+(api-gateway and ml-serving by default). When an HPA is enabled the
+matching Deployment omits .spec.replicas (see templates/services.yaml).
+*/ -}}
+{{- $root := . -}}
+{{- range $name, $hpa := .Values.hpa }}
+{{- if $hpa.enabled }}
+{{- $svc := index $root.Values.services $name | default dict }}
+{{- if $svc.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "medflow.labels" $root | nindent 4 }}
+    {{- include "medflow.selectorLabels" (dict "root" $root "name" $name) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}
+  minReplicas: {{ $hpa.minReplicas }}
+  maxReplicas: {{ $hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $hpa.targetCPUUtilizationPercentage }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+{{- end }}
+{{- end }}
+{{- end }}

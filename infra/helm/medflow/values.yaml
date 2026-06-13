@@ -1,0 +1,281 @@
+# Default values for the medflow chart (production-shaped).
+# Local overrides live in values-local.yaml.
+
+global:
+  imageRegistry: ghcr.io/yousef-hamda/medflow
+  imageTag: "" # defaults to .Chart.appVersion
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  # Data-plane endpoints (medflow-data namespace by default).
+  dataNamespace: medflow-data
+  otelEndpoint: http://otel-collector.medflow-observability.svc.cluster.local:4318
+  environment: production
+
+serviceAccount:
+  create: true
+  annotations: {}
+  # Per-service IRSA annotations (AWS) are set under services.<name>.serviceAccountAnnotations.
+
+istio:
+  # Toggles the sidecar.istio.io/inject pod annotation on every Deployment.
+  # Set false on clusters without Istio (see values-local.yaml).
+  sidecarInject: true
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Secrets — DEV PLACEHOLDERS ONLY.
+# In production set secrets.create=false and deliver the same Secret via
+# external-secrets (Vault / AWS Secrets Manager); see templates/secrets.yaml.
+# ──────────────────────────────────────────────────────────────────────────────
+secrets:
+  create: true
+  name: medflow-secrets
+  data:
+    DATABASE_PASSWORD: medflow_dev_password
+    MINIO_ACCESS_KEY: minio_admin
+    MINIO_SECRET_KEY: minio_dev_password
+    JWT_SIGNING_KEY: dev-only-jwt-signing-key-change-me
+    DATE_SHIFT_SECRET: dev-only-date-shift-secret
+    VAULT_TOKEN: medflow-dev-root
+
+# Shared non-secret config rendered into a ConfigMap (templates/configmaps.yaml)
+# and injected into every service via envFrom.
+config:
+  KAFKA_BROKERS: kafka.medflow-data.svc.cluster.local:9092
+  POSTGRES_HOST: postgres.medflow-data.svc.cluster.local
+  REDIS_URL: redis://redis.medflow-data.svc.cluster.local:6379
+  MINIO_ENDPOINT: http://minio.medflow-data.svc.cluster.local:9000
+  VAULT_ADDR: http://vault.medflow-data.svc.cluster.local:8200
+  MLFLOW_TRACKING_URI: http://mlflow.medflow-data.svc.cluster.local:5000
+  FHIR_BASE_URL: http://fhir-server:8090/fhir
+  ML_SERVING_URL: http://ml-serving:8094
+  AUDIT_SERVICE_URL: http://audit-service:8095
+  DEID_SERVICE_URL: http://deid-service:8093
+  API_GATEWAY_URL: http://api-gateway:4000
+
+ingress:
+  enabled: false # Istio Gateway/VirtualService (infra/istio/) is the primary entry point.
+  className: nginx
+  annotations: {}
+  tls: []
+  hosts:
+    - host: app.medflow.example.com
+      service: clinician-dashboard
+      port: 3000
+    - host: portal.medflow.example.com
+      service: patient-portal
+      port: 3001
+    - host: api.medflow.example.com
+      service: api-gateway
+      port: 4000
+
+hpa:
+  api-gateway:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  ml-serving:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 60
+
+podDisruptionBudget:
+  enabled: true
+  # Applied to every service with more than one replica.
+  maxUnavailable: 1
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Application services. Each entry becomes a Deployment + Service (+SA).
+# Ports mirror docker-compose.yml.
+# ──────────────────────────────────────────────────────────────────────────────
+services:
+  fhir-server:
+    enabled: true
+    replicas: 2
+    port: 8090
+    healthPath: /actuator/health
+    metricsPath: /actuator/prometheus
+    resources:
+      requests: { cpu: 500m, memory: 1Gi }
+      limits: { cpu: "2", memory: 2Gi }
+    env:
+      SERVER_PORT: "8090"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres.medflow-data.svc.cluster.local:5432/fhir
+      SPRING_DATASOURCE_USERNAME: medflow
+    secretEnv:
+      SPRING_DATASOURCE_PASSWORD: DATABASE_PASSWORD
+
+  hl7v2-ingester:
+    enabled: true
+    replicas: 2
+    port: 8097
+    healthPath: /healthz
+    extraPorts:
+      - name: mllp
+        port: 2575
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    env:
+      SERVER_PORT: "8097"
+      MLLP_PORT: "2575"
+
+  dicom-receiver:
+    enabled: true
+    replicas: 2
+    port: 8091
+    healthPath: /healthz
+    extraPorts:
+      - name: dicom
+        port: 11112
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 1Gi }
+    env:
+      HTTP_PORT: "8091"
+      DICOM_PORT: "11112"
+      DICOM_AE_TITLE: MEDFLOW
+    secretEnv:
+      MINIO_ACCESS_KEY: MINIO_ACCESS_KEY
+      MINIO_SECRET_KEY: MINIO_SECRET_KEY
+    serviceAccountAnnotations: {}
+    # AWS: eks.amazonaws.com/role-arn: arn:aws:iam::<acct>:role/medflow-dicom-receiver
+
+  wearables-ingester:
+    enabled: true
+    replicas: 3
+    port: 8092
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 250m, memory: 256Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    env:
+      HTTP_PORT: "8092"
+      MQTT_BROKER: mosquitto.medflow-data.svc.cluster.local
+      MQTT_PORT: "1883"
+      DATABASE_URL: postgresql+asyncpg://medflow:$(DATABASE_PASSWORD)@postgres.medflow-data.svc.cluster.local:5432/vitals
+    secretEnv:
+      DATABASE_PASSWORD: DATABASE_PASSWORD
+
+  deid-service:
+    enabled: true
+    replicas: 2
+    port: 8093
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 1Gi }
+    env:
+      HTTP_PORT: "8093"
+    secretEnv:
+      DATE_SHIFT_SECRET: DATE_SHIFT_SECRET
+
+  ml-serving:
+    enabled: true
+    replicas: 2
+    port: 8094
+    healthPath: /healthz
+    resources:
+      requests: { cpu: "1", memory: 2Gi }
+      limits: { cpu: "2", memory: 4Gi }
+    env:
+      HTTP_PORT: "8094"
+      FEAST_REDIS_HOST: redis.medflow-data.svc.cluster.local
+      CANARY_ENABLED: "true"
+      DATABASE_URL: postgresql+asyncpg://medflow:$(DATABASE_PASSWORD)@postgres.medflow-data.svc.cluster.local:5432/predictions
+      MLFLOW_S3_ENDPOINT_URL: http://minio.medflow-data.svc.cluster.local:9000
+    secretEnv:
+      DATABASE_PASSWORD: DATABASE_PASSWORD
+      AWS_ACCESS_KEY_ID: MINIO_ACCESS_KEY
+      AWS_SECRET_ACCESS_KEY: MINIO_SECRET_KEY
+    serviceAccountAnnotations: {}
+    # AWS: eks.amazonaws.com/role-arn: arn:aws:iam::<acct>:role/medflow-ml-serving
+
+  audit-service:
+    enabled: true
+    replicas: 2
+    port: 8095
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 250m, memory: 256Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    env:
+      HTTP_PORT: "8095"
+      WORM_BUCKET: audit-worm
+      DATABASE_URL: postgresql://medflow:$(DATABASE_PASSWORD)@postgres.medflow-data.svc.cluster.local:5432/audit
+    secretEnv:
+      DATABASE_PASSWORD: DATABASE_PASSWORD
+      MINIO_ACCESS_KEY: MINIO_ACCESS_KEY
+      MINIO_SECRET_KEY: MINIO_SECRET_KEY
+    serviceAccountAnnotations: {}
+    # AWS: eks.amazonaws.com/role-arn: arn:aws:iam::<acct>:role/medflow-audit-service
+
+  cds-hooks-service:
+    enabled: true
+    replicas: 2
+    port: 8096
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    env:
+      HTTP_PORT: "8096"
+
+  api-gateway:
+    enabled: true
+    replicas: 3
+    port: 4000
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 500m, memory: 512Mi }
+      limits: { cpu: "2", memory: 1Gi }
+    env:
+      HTTP_PORT: "4000"
+      TRINO_URL: http://trino.medflow-data.svc.cluster.local:8080
+      OIDC_ISSUER: https://api.medflow.example.com
+      DATABASE_URL: postgresql://medflow:$(DATABASE_PASSWORD)@postgres.medflow-data.svc.cluster.local:5432/gateway
+    secretEnv:
+      DATABASE_PASSWORD: DATABASE_PASSWORD
+      JWT_SIGNING_KEY: JWT_SIGNING_KEY
+      VAULT_TOKEN: VAULT_TOKEN
+
+  realtime-gateway:
+    enabled: true
+    replicas: 2
+    port: 4001
+    healthPath: /healthz
+    resources:
+      requests: { cpu: 250m, memory: 256Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    env:
+      HTTP_PORT: "4001"
+    secretEnv:
+      JWT_SIGNING_KEY: JWT_SIGNING_KEY
+
+  clinician-dashboard:
+    enabled: true
+    replicas: 2
+    port: 3000
+    healthPath: /
+    metricsPath: ""
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+    env:
+      NEXT_PUBLIC_API_URL: https://api.medflow.example.com
+      NEXT_PUBLIC_REALTIME_URL: https://api.medflow.example.com/realtime
+      NEXT_PUBLIC_FHIR_URL: https://api.medflow.example.com/fhir
+
+  patient-portal:
+    enabled: true
+    replicas: 2
+    port: 3001
+    healthPath: /
+    metricsPath: ""
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: 500m, memory: 512Mi }
+    env:
+      NEXT_PUBLIC_API_URL: https://api.medflow.example.com
+      NEXT_PUBLIC_REALTIME_URL: https://api.medflow.example.com/realtime

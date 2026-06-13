@@ -1,0 +1,30 @@
+# App-of-apps root. Apply this single Application by hand once:
+#   kubectl apply -f infra/argocd/project.yaml
+#   kubectl apply -f infra/argocd/root-app.yaml
+# Everything under infra/argocd/apps/ is then managed by ArgoCD itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: medflow-root
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: medflow
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: medflow
+  source:
+    repoURL: https://github.com/yousef-hamda/medflow.git
+    targetRevision: main
+    path: infra/argocd/apps
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - PruneLast=true

@@ -1,0 +1,66 @@
+# Client-side TLS + traffic policy for in-mesh calls.
+#
+# The namespace-wide wildcard rule forces ISTIO_MUTUAL (sidecar-issued certs)
+# for every service in medflow; the per-service rules below refine traffic
+# policy for the two hottest paths without changing the TLS mode.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: medflow-mtls
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  host: "*.medflow.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+# api-gateway: bound concurrent connections and eject misbehaving pods.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: api-gateway
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  host: api-gateway.medflow.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 1024
+      http:
+        http1MaxPendingRequests: 256
+        http2MaxRequests: 1024
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+---
+# ml-serving: clinical scoring path — fail fast and eject slow/erroring pods
+# so canary analysis (CANARY_ENABLED) sees clean signals.
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: ml-serving
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  host: ml-serving.medflow.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 64
+        http2MaxRequests: 256
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 15s
+      baseEjectionTime: 120s
+      maxEjectionPercent: 50

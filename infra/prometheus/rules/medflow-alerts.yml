@@ -1,0 +1,89 @@
+# MedFlow alerting rules.
+# Clinical-safety alerts are paged; platform alerts go to the on-call channel.
+
+groups:
+  - name: medflow-clinical
+    rules:
+      # Sepsis alert volume doubling vs the same-time 24h baseline usually means
+      # either a real ward event or (more often) a model/feature regression.
+      - alert: SepsisAlertVolumeAnomaly
+        expr: |
+          (
+            sum(rate(medflow_sepsis_alerts_total[15m]))
+            /
+            clamp_min(sum(rate(medflow_sepsis_alerts_total[15m] offset 24h)), 0.001)
+          ) > 2
+          and
+          sum(rate(medflow_sepsis_alerts_total[15m])) > 0.05
+        for: 15m
+        labels:
+          severity: page
+          team: clinical-ml
+        annotations:
+          summary: "Sepsis alert volume is more than 2x the 24h baseline"
+          description: >-
+            The sepsis alert rate over the last 15m is {{ $value | printf "%.1f" }}x
+            the rate at the same time yesterday. Check ml-serving model version,
+            feature pipeline freshness, and ward census before trusting alerts.
+
+      - alert: MLServingLatencyHigh
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="ml-serving"}[5m]))
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: page
+          team: clinical-ml
+        annotations:
+          summary: "ml-serving p99 latency above 500ms"
+          description: >-
+            p99 inference latency is {{ $value | humanizeDuration }} over the last 5m.
+            CDS Hooks responses will start timing out; check model cache hit rate
+            and Feast/Redis health.
+
+  - name: medflow-compliance
+    rules:
+      - alert: AuditChainVerifyFailing
+        expr: medflow_audit_chain_verification_success != 1
+        for: 5m
+        labels:
+          severity: page
+          team: security
+        annotations:
+          summary: "Audit hash-chain verification is failing"
+          description: >-
+            The audit-service periodic hash-chain verification has been failing for
+            5 minutes. This is a potential tamper event — preserve the WORM bucket
+            and follow the incident-response runbook before restarting anything.
+
+  - name: medflow-platform
+    rules:
+      - alert: FHIRServer5xx
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="fhir-server", status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{job="fhir-server"}[5m])), 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "FHIR server 5xx error ratio above 5%"
+          description: >-
+            {{ $value | humanizePercentage }} of FHIR server requests are failing
+            with 5xx over the last 5m. Most ingest paths depend on this service.
+
+      - alert: KafkaConsumerLag
+        expr: |
+          max by (consumergroup, topic) (kafka_consumergroup_lag) > 10000
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Kafka consumer group {{ $labels.consumergroup }} lagging on {{ $labels.topic }}"
+          description: >-
+            Consumer lag is {{ $value }} messages and has not recovered in 15m.
+            vitals.raw / fhir.changes backlog delays alerts and downstream features.

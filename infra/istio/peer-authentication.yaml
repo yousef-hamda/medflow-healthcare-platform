@@ -1,0 +1,28 @@
+# Mutual-TLS posture for the MedFlow mesh.
+#
+# PHI flows between every app service, so the medflow namespace enforces
+# STRICT mTLS: plaintext connections are rejected at the sidecar. The data
+# plane (medflow-data) stays PERMISSIVE because several stateful components
+# (Postgres, Kafka, MinIO, Mosquitto) run without sidecars and are reached
+# over their own TLS or NetworkPolicy-scoped plaintext.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: medflow-data
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  mtls:
+    mode: PERMISSIVE

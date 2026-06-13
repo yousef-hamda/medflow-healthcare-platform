@@ -1,0 +1,57 @@
+# Resource quotas + default limits per namespace. Sized for a small EKS
+# cluster (3 x m6i.xlarge); bump for load testing.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: medflow-quota
+  namespace: medflow
+spec:
+  hard:
+    requests.cpu: "12"
+    requests.memory: 24Gi
+    limits.cpu: "24"
+    limits.memory: 48Gi
+    pods: "60"
+    services.loadbalancers: "0" # ingress only through the Istio gateway
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: medflow-observability-quota
+  namespace: medflow-observability
+spec:
+  hard:
+    requests.cpu: "6"
+    requests.memory: 12Gi
+    limits.cpu: "12"
+    limits.memory: 24Gi
+    pods: "30"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: medflow-data-quota
+  namespace: medflow-data
+spec:
+  hard:
+    requests.cpu: "16"
+    requests.memory: 48Gi
+    limits.cpu: "32"
+    limits.memory: 96Gi
+    pods: "60"
+---
+# Defaults so unannotated pods do not dodge the quota.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: medflow-defaults
+  namespace: medflow
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi

@@ -1,0 +1,35 @@
+# North-south entry point for MedFlow. Binds to the default Istio
+# ingressgateway. TLS: provide a secret named medflow-tls in istio-system
+# (cert-manager Certificate or `kubectl create secret tls`).
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: medflow-gateway
+  namespace: medflow
+  labels:
+    app.kubernetes.io/part-of: medflow
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - app.medflow.example.com
+        - portal.medflow.example.com
+        - api.medflow.example.com
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - app.medflow.example.com
+        - portal.medflow.example.com
+        - api.medflow.example.com
+      tls:
+        mode: SIMPLE
+        credentialName: medflow-tls

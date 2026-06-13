@@ -1,0 +1,67 @@
+# Helm values for the upstream falcosecurity/falco chart, customised for
+# MedFlow. Deploy with:
+#   helm repo add falcosecurity https://falcosecurity.github.io/charts
+#   helm upgrade --install falco falcosecurity/falco \
+#     -n falco --create-namespace -f infra/falco/values-falco.yaml
+#
+# The falco repo is already whitelisted in infra/argocd/project.yaml so this
+# can equally be driven by an ArgoCD Application.
+
+# --- Driver -----------------------------------------------------------------
+# Prefer the eBPF probe (CO-RE) over the kernel module: no compilation, works
+# on managed-node-group AMIs (EKS) without privileged module loading.
+driver:
+  enabled: true
+  kind: ebpf
+
+# --- Custom MedFlow rules ---------------------------------------------------
+# Mount falco-rules-medflow.yaml into /etc/falco/rules.d so it is loaded
+# alongside the base ruleset. The chart packages the contents of customRules
+# into a ConfigMap; here we reference the file so the two stay in sync.
+customRules:
+  falco-rules-medflow.yaml: |-
+    # Loaded from infra/falco/falco-rules-medflow.yaml at deploy time.
+    # When templating via Helm, inline that file's contents here, e.g.:
+    #   --set-file customRules."falco-rules-medflow\.yaml"=infra/falco/falco-rules-medflow.yaml
+
+falco:
+  rules_files:
+    - /etc/falco/falco_rules.yaml
+    - /etc/falco/falco_rules.local.yaml
+    - /etc/falco/rules.d
+  # JSON output so falcosidekick -> Loki parses structured fields.
+  json_output: true
+  json_include_output_property: true
+  log_level: info
+  priority: notice
+
+# --- falcosidekick: forward alerts to Loki ----------------------------------
+falcosidekick:
+  enabled: true
+  replicaCount: 1
+  config:
+    # Ship every Falco event to Loki over HTTP push.
+    loki:
+      hostport: "http://loki:3100"
+      endpoint: "/loki/api/v1/push"
+      # Tenant left empty for single-tenant Loki; set for multi-tenant.
+      tenant: ""
+      # Promote these Falco fields to Loki labels for querying.
+      extralabels: "rule,priority,k8s_ns_name,k8s_pod_name"
+      minimumpriority: "notice"
+  webui:
+    enabled: false
+
+# --- Resources / scheduling -------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+
+# Falco must run on every node to observe all workloads.
+tolerations:
+  - effect: NoSchedule
+    operator: Exists

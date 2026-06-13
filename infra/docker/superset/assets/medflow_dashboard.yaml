@@ -1,0 +1,101 @@
+# MedFlow OMOP analytics dashboard — Superset export-format YAML.
+# Charts query the OMOP CDM tables in the lakehouse through Trino (delta catalog).
+# Import: superset import-dashboards --path medflow_dashboard.yaml --username admin
+dashboards:
+  - __Dashboard__:
+      dashboard_title: MedFlow OMOP Analytics
+      description: Population analytics over the OMOP CDM lakehouse (de-identified).
+      slug: medflow-omop
+      published: true
+      css: ""
+      json_metadata: '{"refresh_frequency": 0, "color_scheme": "supersetColors"}'
+      position_json: '{"DASHBOARD_VERSION_KEY": "v2"}'
+      slices:
+        - __Slice__:
+            slice_name: Condition Prevalence (Top 20)
+            viz_type: dist_bar
+            datasource_type: table
+            params: |
+              {
+                "viz_type": "dist_bar",
+                "metrics": ["count"],
+                "groupby": ["condition_name"],
+                "row_limit": 20,
+                "order_desc": true
+              }
+            table:
+              __SqlaTable__:
+                table_name: omop_condition_prevalence
+                schema: omop
+                sql: |
+                  SELECT c.concept_name AS condition_name,
+                         COUNT(DISTINCT co.person_id) AS person_count
+                  FROM delta.omop.condition_occurrence co
+                  JOIN delta.omop.concept c
+                    ON c.concept_id = co.condition_concept_id
+                  GROUP BY c.concept_name
+                database:
+                  __Database__:
+                    database_name: MedFlow Trino
+                    sqlalchemy_uri: trino://trino@trino:8080/delta
+                    expose_in_sqllab: true
+                    allow_ctas: false
+                    allow_cvas: false
+                    extra: '{"engine_params": {}}'
+        - __Slice__:
+            slice_name: Admissions per Month
+            viz_type: echarts_timeseries_line
+            datasource_type: table
+            params: |
+              {
+                "viz_type": "echarts_timeseries_line",
+                "metrics": ["count"],
+                "granularity_sqla": "visit_start_date",
+                "time_grain_sqla": "P1M"
+              }
+            table:
+              __SqlaTable__:
+                table_name: omop_visit_occurrence
+                schema: omop
+                sql: |
+                  SELECT visit_occurrence_id,
+                         person_id,
+                         visit_start_date,
+                         visit_concept_id
+                  FROM delta.omop.visit_occurrence
+                database:
+                  __Database__:
+                    database_name: MedFlow Trino
+                    sqlalchemy_uri: trino://trino@trino:8080/delta
+                    expose_in_sqllab: true
+                    allow_ctas: false
+                    allow_cvas: false
+                    extra: '{"engine_params": {}}'
+        - __Slice__:
+            slice_name: Age Distribution of Cohort
+            viz_type: histogram
+            datasource_type: table
+            params: |
+              {
+                "viz_type": "histogram",
+                "all_columns_x": ["age_years"],
+                "row_limit": 10000,
+                "link_length": "25"
+              }
+            table:
+              __SqlaTable__:
+                table_name: omop_person_age
+                schema: omop
+                sql: |
+                  SELECT person_id,
+                         year(current_date) - year_of_birth AS age_years,
+                         gender_concept_id
+                  FROM delta.omop.person
+                database:
+                  __Database__:
+                    database_name: MedFlow Trino
+                    sqlalchemy_uri: trino://trino@trino:8080/delta
+                    expose_in_sqllab: true
+                    allow_ctas: false
+                    allow_cvas: false
+                    extra: '{"engine_params": {}}'

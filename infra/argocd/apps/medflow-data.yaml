@@ -1,0 +1,44 @@
+# Wave 2 — the data plane (Airflow orchestration, Spark batch, Flink stream).
+# Syncs last: it depends on the core services (wave 1) being up and on
+# observability (wave 0) for pipeline telemetry. Landed in the isolated
+# medflow-data namespace so its quotas/NetworkPolicies differ from the PHI
+# app namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: medflow-data
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: medflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: medflow
+  source:
+    repoURL: https://github.com/yousef-hamda/medflow.git
+    targetRevision: main
+    # Airflow / Spark / Flink data-plane manifests. Adjust path once the
+    # data-plane chart/manifests land in the monorepo.
+    path: infra/helm/medflow
+    helm:
+      releaseName: medflow-data
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: medflow-data
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

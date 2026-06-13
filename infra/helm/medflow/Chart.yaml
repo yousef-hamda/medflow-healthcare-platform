@@ -1,0 +1,22 @@
+apiVersion: v2
+name: medflow
+description: >-
+  MedFlow healthcare data platform — application-layer services (interop,
+  de-identification, ML serving, audit, gateways, frontends). Data-plane
+  dependencies (Postgres, Kafka, MinIO, Vault, Redis) are deployed separately
+  (see infra/argocd/ and infra/terraform/).
+type: application
+version: 0.3.0
+appVersion: "0.3.0"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/yousef-hamda/medflow
+sources:
+  - https://github.com/yousef-hamda/medflow
+maintainers:
+  - name: Yousef Hasan Hamda
+keywords:
+  - healthcare
+  - fhir
+  - hl7
+  - hipaa
+  - ml

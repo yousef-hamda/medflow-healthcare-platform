@@ -1,0 +1,240 @@
+# Default-deny plus least-privilege allows for the medflow namespace.
+# L7 authorization is layered on top by Istio AuthorizationPolicies (infra/istio/).
+#
+# Conventions: every app pod is labelled app.kubernetes.io/name=<service> by the
+# Helm chart (infra/helm/medflow).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# Everyone may resolve DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# Everyone may ship telemetry to the otel-collector and talk to istiod.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-telemetry-egress
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-observability
+      ports:
+        - protocol: TCP
+          port: 4317
+        - protocol: TCP
+          port: 4318
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+---
+# Prometheus (observability ns) may scrape any pod's metrics port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-observability
+---
+# Ingress gateway -> public-facing services only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-gateway
+  namespace: medflow
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [api-gateway, realtime-gateway, clinician-dashboard, patient-portal]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+---
+# ml-serving may only be called by api-gateway and cds-hooks-service in-namespace
+# (plus Flink jobs from the data plane).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ml-serving-ingress
+  namespace: medflow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ml-serving
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cds-hooks-service
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-data
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: flink
+      ports:
+        - protocol: TCP
+          port: 8094
+---
+# audit-service accepts writes from all app pods in-namespace (every service
+# emits audit events) — but nothing outside the namespace except Prometheus.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: audit-service-ingress
+  namespace: medflow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: audit-service
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8095
+---
+# fhir-server is callable by interop/app services, not the frontends directly.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fhir-server-ingress
+  namespace: medflow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: fhir-server
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - api-gateway
+                  - hl7v2-ingester
+                  - dicom-receiver
+                  - cds-hooks-service
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+# App pods that need the data plane (postgres/kafka/redis/minio/vault/mlflow).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-data-plane-egress
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-data
+      ports:
+        - { protocol: TCP, port: 5432 }  # postgres
+        - { protocol: TCP, port: 9092 }  # kafka
+        - { protocol: TCP, port: 6379 }  # redis
+        - { protocol: TCP, port: 9000 }  # minio
+        - { protocol: TCP, port: 8200 }  # vault
+        - { protocol: TCP, port: 5000 }  # mlflow
+        - { protocol: TCP, port: 1883 }  # mosquitto
+        - { protocol: TCP, port: 8080 }  # trino
+---
+# In-namespace service-to-service east-west traffic (still constrained by the
+# per-service ingress policies above and Istio L7 authz).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace-egress
+  namespace: medflow
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {}
+---
+# audit-service egress is pinned: postgres + minio (WORM) + kafka only.
+# Falco additionally alerts on any non-allowlisted outbound connection.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: audit-service-egress
+  namespace: medflow
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: audit-service
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-data
+      ports:
+        - { protocol: TCP, port: 5432 }
+        - { protocol: TCP, port: 9000 }
+        - { protocol: TCP, port: 9092 }
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: medflow-observability
+      ports:
+        - { protocol: TCP, port: 4317 }
+        - { protocol: TCP, port: 4318 }
