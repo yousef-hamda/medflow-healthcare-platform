@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling==1.27.0"]
+requires = ["hatchling==1.30.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,27 +9,27 @@ description = "MedFlow de-identification service: HIPAA Safe Harbor text + FHIR 
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi==0.115.12",
-    "uvicorn[standard]==0.34.2",
-    "pydantic==2.11.4",
-    "pydantic-settings==2.9.1",
+    "fastapi==0.136.3",
+    "uvicorn[standard]==0.49.0",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.1",
     "httpx==0.28.1",
-    "structlog==25.3.0",
-    "prometheus-client==0.21.1",
-    "presidio-analyzer==2.2.358",
-    "presidio-anonymizer==2.2.358",
-    "opentelemetry-sdk==1.32.1",
-    "opentelemetry-exporter-otlp-proto-http==1.32.1",
-    "opentelemetry-instrumentation-fastapi==0.53b1",
+    "structlog==26.1.0",
+    "prometheus-client==0.25.0",
+    "presidio-analyzer==2.2.362",
+    "presidio-anonymizer==2.2.362",
+    "opentelemetry-sdk==1.42.1",
+    "opentelemetry-exporter-otlp-proto-http==1.42.1",
+    "opentelemetry-instrumentation-fastapi==0.63b1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.3.5",
-    "pytest-asyncio==0.26.0",
-    "ruff==0.11.8",
-    "black==25.1.0",
-    "mypy==1.15.0",
+    "pytest==9.0.3",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.15.17",
+    "black==26.5.1",
+    "mypy==2.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
