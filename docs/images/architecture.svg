@@ -1,0 +1,355 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" role="img" aria-label="MedFlow architecture diagram">
+  <title>MedFlow — Scalable Healthcare Data Platform</title>
+  <desc>Layered architecture: data sources flow through the interop layer into Kafka, then split between the Flink streaming sepsis path and the Spark/Airflow batch lakehouse (bronze, silver, OMOP gold), feeding analytics and ML serving, then the NestJS application layer, then the frontends. An operations and compliance sidebar spans all layers.</desc>
+
+  <defs>
+    <!-- palette: teal #0d9488 / slate #334155 / amber #d97706 -->
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrowTeal" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#0d9488"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#d97706"/>
+    </marker>
+    <style>
+      .band { fill:#f8fafc; stroke:#e2e8f0; stroke-width:1.5; }
+      .bandlabel { fill:#94a3b8; font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+      .node { fill:#ffffff; stroke:#334155; stroke-width:1.5; rx:9; }
+      .node-teal { fill:#ccfbf1; stroke:#0d9488; stroke-width:1.5; }
+      .node-amber { fill:#fef3c7; stroke:#d97706; stroke-width:1.5; }
+      .node-slate { fill:#e2e8f0; stroke:#334155; stroke-width:1.5; }
+      .ntitle { fill:#0f172a; font-size:14px; font-weight:700; }
+      .nsub { fill:#64748b; font-size:11px; }
+      .edge { stroke:#475569; stroke-width:1.6; fill:none; }
+      .edge-teal { stroke:#0d9488; stroke-width:2; fill:none; }
+      .edge-amber { stroke:#d97706; stroke-width:1.8; fill:none; stroke-dasharray:5 4; }
+      .elabel { fill:#475569; font-size:10.5px; font-style:italic; }
+      .kafka { fill:#1e293b; stroke:#0f172a; }
+      .kafkatext { fill:#ffffff; font-size:15px; font-weight:700; }
+      .kafkasub { fill:#cbd5e1; font-size:10.5px; font-family:monospace; }
+    </style>
+  </defs>
+
+  <!-- ===== background ===== -->
+  <rect x="0" y="0" width="1400" height="1000" fill="#ffffff"/>
+
+  <!-- ===== title ===== -->
+  <text x="40" y="46" fill="#0f172a" font-size="28" font-weight="800">MedFlow</text>
+  <text x="173" y="46" fill="#0d9488" font-size="28" font-weight="800">— Scalable Healthcare Data Platform</text>
+  <text x="40" y="68" fill="#64748b" font-size="13">FHIR R4 · HL7v2 · DICOM · wearables → Delta lakehouse + OMOP · Flink sepsis EWS · governed app layer · all data synthetic</text>
+
+  <!-- ============================================================= -->
+  <!--  MAIN COLUMN (x: 40 .. 1120)   SIDEBAR (x: 1140 .. 1360)      -->
+  <!-- ============================================================= -->
+
+  <!-- ===== BAND 1: SOURCES ===== -->
+  <rect class="band" x="40" y="90" width="1080" height="86"/>
+  <text class="bandlabel" x="52" y="110">Sources</text>
+  <g>
+    <rect class="node node-slate" x="70"  y="118" width="220" height="46" rx="9"/>
+    <text class="ntitle" x="82" y="140">Synthea generator</text>
+    <text class="nsub"   x="82" y="156">FHIR R4 bundles</text>
+
+    <rect class="node node-slate" x="320" y="118" width="200" height="46" rx="9"/>
+    <text class="ntitle" x="332" y="140">HL7v2 feeds</text>
+    <text class="nsub"   x="332" y="156">ADT / ORU / ORM (MLLP)</text>
+
+    <rect class="node node-slate" x="550" y="118" width="220" height="46" rx="9"/>
+    <text class="ntitle" x="562" y="140">DICOM modalities</text>
+    <text class="nsub"   x="562" y="156">chest X-ray studies</text>
+
+    <rect class="node node-slate" x="800" y="118" width="290" height="46" rx="9"/>
+    <text class="ntitle" x="812" y="140">Wearables / devices</text>
+    <text class="nsub"   x="812" y="156">vitals over MQTT (:1883)</text>
+  </g>
+
+  <!-- ===== BAND 2: INTEROP ===== -->
+  <rect class="band" x="40" y="196" width="1080" height="96"/>
+  <text class="bandlabel" x="52" y="216">Interop layer</text>
+  <g>
+    <rect class="node" x="70"  y="226" width="220" height="52" rx="9"/>
+    <text class="ntitle" x="82" y="248">HAPI FHIR R4</text>
+    <text class="nsub"   x="82" y="266">:8090 · canonical clinical store</text>
+
+    <rect class="node" x="320" y="226" width="200" height="52" rx="9"/>
+    <text class="ntitle" x="332" y="248">HL7v2 ingester</text>
+    <text class="nsub"   x="332" y="266">MLLP :2575 · raw→map</text>
+
+    <rect class="node" x="550" y="226" width="220" height="52" rx="9"/>
+    <text class="ntitle" x="562" y="248">DICOM SCP</text>
+    <text class="nsub"   x="562" y="266">:11112 · pynetdicom C-STORE</text>
+
+    <rect class="node" x="800" y="226" width="290" height="52" rx="9"/>
+    <text class="ntitle" x="812" y="248">Wearables ingester</text>
+    <text class="nsub"   x="812" y="266">FastAPI :8092 · MQTT subscriber</text>
+  </g>
+
+  <!-- source -> interop arrows -->
+  <path class="edge" d="M180,164 L180,224" marker-end="url(#arrow)"/>
+  <path class="edge" d="M420,164 L420,224" marker-end="url(#arrow)"/>
+  <text class="elabel" x="426" y="192">MLLP</text>
+  <path class="edge" d="M660,164 L660,224" marker-end="url(#arrow)"/>
+  <text class="elabel" x="666" y="192">C-STORE</text>
+  <path class="edge" d="M945,164 L945,224" marker-end="url(#arrow)"/>
+  <!-- HL7/DICOM upsert into FHIR -->
+  <path class="edge" d="M320,252 L292,252" marker-end="url(#arrow)"/>
+  <path class="edge" d="M660,278 C660,300 470,300 290,278" marker-end="url(#arrow)"/>
+  <text class="elabel" x="470" y="305">ImagingStudy / Patient upsert</text>
+
+  <!-- ===== BAND 3: KAFKA ===== -->
+  <rect class="kafka node" x="70" y="318" width="1020" height="70" rx="10"/>
+  <text class="kafkatext" x="92" y="346">Apache Kafka</text>
+  <text class="kafkasub" x="92" y="366">the shock absorber · 7-day retention</text>
+  <text class="kafkasub" x="300" y="340">fhir.changes</text>
+  <text class="kafkasub" x="300" y="356">hl7.raw</text>
+  <text class="kafkasub" x="300" y="372">dicom.received</text>
+  <text class="kafkasub" x="470" y="340">vitals.raw (12p)</text>
+  <text class="kafkasub" x="470" y="356">vitals.aggregates</text>
+  <text class="kafkasub" x="470" y="372">alerts</text>
+  <text class="kafkasub" x="660" y="340">predictions</text>
+  <text class="kafkasub" x="660" y="356">audit.events</text>
+  <text class="kafkasub" x="850" y="356" fill="#5eead4">key = patient / resource id → ordering</text>
+
+  <!-- interop -> kafka -->
+  <path class="edge" d="M180,278 L180,316" marker-end="url(#arrow)"/>
+  <path class="edge" d="M420,278 L420,316" marker-end="url(#arrow)"/>
+  <path class="edge" d="M660,278 L640,316" marker-end="url(#arrow)"/>
+  <path class="edge-teal" d="M945,278 L945,316" marker-end="url(#arrowTeal)"/>
+  <text class="elabel" x="950" y="304" fill="#0d9488">vitals.raw</text>
+
+  <!-- ===== BAND 4a: STREAM PROCESSING (left)  BAND 4b: BATCH (right) ===== -->
+  <rect class="band" x="40" y="408" width="520" height="120"/>
+  <text class="bandlabel" x="52" y="428">Stream processing</text>
+  <rect class="node node-teal" x="70" y="438" width="220" height="74" rx="9"/>
+  <text class="ntitle" x="82" y="460">PyFlink — sepsis EWS</text>
+  <text class="nsub"   x="82" y="478">6h / 15min sliding windows</text>
+  <text class="nsub"   x="82" y="494">NEWS2 fallback · 30-min dedupe</text>
+  <text class="nsub"   x="82" y="508">keyed state · exactly-once</text>
+
+  <rect class="node node-teal" x="320" y="438" width="220" height="74" rx="9"/>
+  <text class="ntitle" x="332" y="460">realtime-gateway</text>
+  <text class="nsub"   x="332" y="478">Socket.IO :4001</text>
+  <text class="nsub"   x="332" y="494">ABAC-filtered rooms</text>
+  <text class="nsub"   x="332" y="508">per-patient / per-unit fan-out</text>
+
+  <rect class="band" x="580" y="408" width="540" height="120"/>
+  <text class="bandlabel" x="592" y="428">Batch / orchestration</text>
+  <rect class="node node-amber" x="610" y="438" width="220" height="74" rx="9"/>
+  <text class="ntitle" x="622" y="460">Airflow DAGs</text>
+  <text class="nsub"   x="622" y="478">bronze→silver→OMOP</text>
+  <text class="nsub"   x="622" y="494">Great Expectations gates</text>
+  <text class="nsub"   x="622" y="508">OpenLineage → Marquez</text>
+
+  <rect class="node node-amber" x="860" y="438" width="230" height="74" rx="9"/>
+  <text class="ntitle" x="872" y="460">Spark + Delta · dbt-spark</text>
+  <text class="nsub"   x="872" y="478">heavy lifting · OMOP build</text>
+  <text class="nsub"   x="872" y="494">optimistic-concurrency writes</text>
+  <text class="nsub"   x="872" y="508">time travel for recovery</text>
+
+  <!-- kafka -> flink (teal) ; kafka -> airflow (amber) -->
+  <path class="edge-teal" d="M180,388 L180,436" marker-end="url(#arrowTeal)"/>
+  <text class="elabel" x="186" y="416" fill="#0d9488">consume vitals.raw</text>
+  <path class="edge-amber" d="M720,388 L720,436" marker-end="url(#arrowAmber)"/>
+  <text class="elabel" x="726" y="416" fill="#d97706">land topics → bronze</text>
+  <!-- flink -> realtime -->
+  <path class="edge-teal" d="M290,475 L318,475" marker-end="url(#arrowTeal)"/>
+  <!-- flink -> kafka alerts (loop back up) -->
+  <path class="edge-teal" d="M150,438 C150,415 250,410 270,388" marker-end="url(#arrowTeal)"/>
+  <text class="elabel" x="160" y="430" fill="#0d9488">alerts ↑</text>
+  <!-- airflow -> spark -->
+  <path class="edge-amber" d="M830,475 L858,475" marker-end="url(#arrowAmber)"/>
+
+  <!-- ===== BAND 5: LAKEHOUSE ===== -->
+  <rect class="band" x="580" y="548" width="540" height="86"/>
+  <text class="bandlabel" x="592" y="568">Medallion lakehouse · MinIO / S3</text>
+  <rect class="node node-amber" x="610" y="576" width="140" height="46" rx="9"/>
+  <text class="ntitle" x="622" y="598">bronze</text>
+  <text class="nsub"   x="622" y="614">raw, replayable</text>
+  <rect class="node node-amber" x="770" y="576" width="140" height="46" rx="9"/>
+  <text class="ntitle" x="782" y="598">silver</text>
+  <text class="nsub"   x="782" y="614">conformed · de-id</text>
+  <rect class="node node-amber" x="930" y="576" width="160" height="46" rx="9"/>
+  <text class="ntitle" x="942" y="598">gold · OMOP v5.4</text>
+  <text class="nsub"   x="942" y="614">research model</text>
+  <path class="edge-amber" d="M750,599 L768,599" marker-end="url(#arrowAmber)"/>
+  <path class="edge-amber" d="M910,599 L928,599" marker-end="url(#arrowAmber)"/>
+  <!-- spark -> bronze -->
+  <path class="edge-amber" d="M860,512 C800,535 720,545 690,574" marker-end="url(#arrowAmber)"/>
+
+  <!-- ===== BAND 6: ANALYTICS + ML ===== -->
+  <rect class="band" x="40" y="548" width="520" height="86"/>
+  <text class="bandlabel" x="52" y="568">ML platform</text>
+  <rect class="node node-teal" x="70" y="576" width="230" height="46" rx="9"/>
+  <text class="ntitle" x="82" y="598">ml-serving :8094</text>
+  <text class="nsub"   x="82" y="614">sepsis LSTM · readmit XGB · CXR · NLP</text>
+  <rect class="node" x="320" y="576" width="220" height="46" rx="9"/>
+  <text class="ntitle" x="332" y="598">MLflow · Feast · SHAP</text>
+  <text class="nsub"   x="332" y="614">registry · features · Evidently</text>
+  <!-- flink -> ml-serving -->
+  <path class="edge-teal" d="M180,512 L180,574" marker-end="url(#arrowTeal)"/>
+  <text class="elabel" x="186" y="540" fill="#0d9488">POST /predict/sepsis</text>
+  <path class="edge" d="M300,599 L318,599" marker-end="url(#arrow)"/>
+
+  <!-- ===== BAND 7: ANALYTICS SERVING ===== -->
+  <rect class="band" x="580" y="654" width="540" height="70"/>
+  <text class="bandlabel" x="592" y="674">Analytics serving</text>
+  <rect class="node" x="610" y="680" width="200" height="36" rx="9"/>
+  <text class="ntitle" x="622" y="703">Trino (delta) :8085</text>
+  <rect class="node" x="830" y="680" width="200" height="36" rx="9"/>
+  <text class="ntitle" x="842" y="703">Superset :8088</text>
+  <path class="edge" d="M810,698 L828,698" marker-end="url(#arrow)"/>
+  <!-- gold -> trino -->
+  <path class="edge" d="M1010,622 C1010,645 850,650 760,678" marker-end="url(#arrow)"/>
+
+  <!-- ===== BAND 8: APPLICATION LAYER ===== -->
+  <rect class="band" x="40" y="744" width="1080" height="110"/>
+  <text class="bandlabel" x="52" y="764">Application layer</text>
+  <rect class="node node-slate" x="70" y="772" width="300" height="72" rx="9"/>
+  <text class="ntitle" x="82" y="794">api-gateway (NestJS) :4000</text>
+  <text class="nsub"   x="82" y="811">SMART scopes · RBAC + ABAC + break-glass</text>
+  <text class="nsub"   x="82" y="826">FHIR proxy: scope-narrow + field-mask</text>
+  <text class="nsub"   x="82" y="840">Vault envelope crypto · audit · throttle</text>
+
+  <rect class="node" x="400" y="772" width="170" height="72" rx="9"/>
+  <text class="ntitle" x="412" y="794">cds-hooks :8096</text>
+  <text class="nsub"   x="412" y="811">sepsis-warning</text>
+  <text class="nsub"   x="412" y="826">readmission-risk</text>
+
+  <rect class="node node-amber" x="600" y="772" width="220" height="72" rx="9"/>
+  <text class="ntitle" x="612" y="794">audit-service :8095</text>
+  <text class="nsub"   x="612" y="811">sha256 hash chain</text>
+  <text class="nsub"   x="612" y="826">append-only Postgres triggers</text>
+  <text class="nsub"   x="612" y="840">daily JSONL.gz → audit-worm</text>
+
+  <rect class="node node-teal" x="850" y="772" width="240" height="72" rx="9"/>
+  <text class="ntitle" x="862" y="794">deid-service :8093</text>
+  <text class="nsub"   x="862" y="811">Presidio Safe Harbor</text>
+  <text class="nsub"   x="862" y="826">HMAC date-shift · ZIP3 · 90+</text>
+  <text class="nsub"   x="862" y="840">per-patient pseudonymization</text>
+
+  <!-- serving -> gateway -->
+  <path class="edge" d="M710,716 C710,735 350,740 230,770" marker-end="url(#arrow)"/>
+  <text class="elabel" x="360" y="735">Trino / OMOP reads</text>
+  <path class="edge" d="M185,278 C30,330 28,720 100,772" marker-end="url(#arrow)"/>
+  <text class="elabel" x="14" y="520" transform="rotate(-90 14 520)">FHIR proxy</text>
+  <path class="edge" d="M150,622 C150,690 180,720 200,770" marker-end="url(#arrow)"/>
+  <text class="elabel" x="156" y="700">ML serving</text>
+  <!-- ml-serving -> cds hooks -->
+  <path class="edge" d="M300,599 C420,610 470,690 480,770" marker-end="url(#arrow)"/>
+  <!-- gateway -> audit + deid -->
+  <path class="edge-amber" d="M370,810 L598,810" marker-end="url(#arrowAmber)"/>
+  <text class="elabel" x="430" y="804" fill="#d97706">audit.events</text>
+  <path class="edge" d="M370,826 C480,860 760,862 850,826" marker-end="url(#arrow)"/>
+
+  <!-- ===== BAND 9: FRONTENDS ===== -->
+  <rect class="band" x="40" y="874" width="1080" height="100"/>
+  <text class="bandlabel" x="52" y="894">Frontends</text>
+  <rect class="node node-slate" x="70" y="902" width="280" height="58" rx="9"/>
+  <text class="ntitle" x="82" y="924">Clinician dashboard :3000</text>
+  <text class="nsub"   x="82" y="941">worklist · DICOM + Grad-CAM viewer</text>
+  <text class="nsub"   x="82" y="954">cohort builder · audit explorer</text>
+
+  <rect class="node node-slate" x="380" y="902" width="240" height="58" rx="9"/>
+  <text class="ntitle" x="392" y="924">Patient portal :3001</text>
+  <text class="nsub"   x="392" y="941">own-record (patient/*.read)</text>
+  <text class="nsub"   x="392" y="954">accounting of disclosures</text>
+
+  <rect class="node node-slate" x="650" y="902" width="240" height="58" rx="9"/>
+  <text class="ntitle" x="662" y="924">Expo mobile</text>
+  <text class="nsub"   x="662" y="941">clinician alert ack on the go</text>
+  <text class="nsub"   x="662" y="954">gateway + Socket.IO</text>
+
+  <!-- gateway/realtime -> frontends -->
+  <path class="edge" d="M220,844 L210,900" marker-end="url(#arrow)"/>
+  <text class="elabel" x="216" y="884">REST / GraphQL</text>
+  <path class="edge" d="M300,844 C360,870 460,880 500,900" marker-end="url(#arrow)"/>
+  <path class="edge-teal" d="M430,512 C430,700 740,760 760,900" marker-end="url(#arrowTeal)"/>
+  <text class="elabel" x="700" y="760" fill="#0d9488">live alerts (Socket.IO)</text>
+
+  <!-- ============================================================= -->
+  <!--  OPS / COMPLIANCE SIDEBAR                                      -->
+  <!-- ============================================================= -->
+  <rect x="1140" y="90" width="220" height="884" rx="12" fill="#0f172a"/>
+  <text x="1160" y="120" fill="#5eead4" font-size="14" font-weight="800" letter-spacing="1.5">CROSS-CUTTING</text>
+  <text x="1160" y="138" fill="#94a3b8" font-size="11">first-class, not afterthoughts</text>
+
+  <!-- security & access -->
+  <rect x="1158" y="156" width="184" height="120" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="176" fill="#fbbf24" font-size="12" font-weight="700">SECURITY &amp; ACCESS</text>
+  <text x="1170" y="196" fill="#e2e8f0" font-size="11">Istio STRICT mTLS</text>
+  <text x="1170" y="212" fill="#e2e8f0" font-size="11">OAuth2 / SMART on FHIR</text>
+  <text x="1170" y="228" fill="#e2e8f0" font-size="11">ABAC + 1h break-glass</text>
+  <text x="1170" y="244" fill="#e2e8f0" font-size="11">Vault Transit (phi-field-key)</text>
+  <text x="1170" y="260" fill="#e2e8f0" font-size="11">WAF · KMS · S3 object-lock</text>
+
+  <!-- audit & compliance -->
+  <rect x="1158" y="286" width="184" height="120" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="306" fill="#fbbf24" font-size="12" font-weight="700">AUDIT &amp; COMPLIANCE</text>
+  <text x="1170" y="326" fill="#e2e8f0" font-size="11">sha256 hash-chain</text>
+  <text x="1170" y="342" fill="#e2e8f0" font-size="11">append-only · WORM 6y</text>
+  <text x="1170" y="358" fill="#e2e8f0" font-size="11">Presidio Safe Harbor de-id</text>
+  <text x="1170" y="374" fill="#e2e8f0" font-size="11">STRIDE threat model</text>
+  <text x="1170" y="390" fill="#e2e8f0" font-size="11">HIPAA §164.312 mapping</text>
+
+  <!-- observability -->
+  <rect x="1158" y="416" width="184" height="118" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="436" fill="#fbbf24" font-size="12" font-weight="700">OBSERVABILITY</text>
+  <text x="1170" y="456" fill="#e2e8f0" font-size="11">OpenTelemetry SDKs</text>
+  <text x="1170" y="472" fill="#e2e8f0" font-size="11">Prometheus + Grafana</text>
+  <text x="1170" y="488" fill="#e2e8f0" font-size="11">Loki (logs) · Tempo (traces)</text>
+  <text x="1170" y="504" fill="#e2e8f0" font-size="11">Marquez lineage</text>
+  <text x="1170" y="520" fill="#e2e8f0" font-size="11">Falco runtime rules</text>
+
+  <!-- supply chain -->
+  <rect x="1158" y="544" width="184" height="118" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="564" fill="#fbbf24" font-size="12" font-weight="700">SUPPLY CHAIN</text>
+  <text x="1170" y="584" fill="#e2e8f0" font-size="11">Trivy scan (fail HIGH/CRIT)</text>
+  <text x="1170" y="600" fill="#e2e8f0" font-size="11">Syft SBOM · Grype re-scan</text>
+  <text x="1170" y="616" fill="#e2e8f0" font-size="11">Cosign keyless signing</text>
+  <text x="1170" y="632" fill="#e2e8f0" font-size="11">verify-before-deploy admission</text>
+  <text x="1170" y="648" fill="#e2e8f0" font-size="11">digest-pinned base images</text>
+
+  <!-- platform / deploy -->
+  <rect x="1158" y="672" width="184" height="118" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="692" fill="#fbbf24" font-size="12" font-weight="700">PLATFORM</text>
+  <text x="1170" y="712" fill="#e2e8f0" font-size="11">Terraform: EKS · RDS · S3</text>
+  <text x="1170" y="728" fill="#e2e8f0" font-size="11">KMS · WAF</text>
+  <text x="1170" y="744" fill="#e2e8f0" font-size="11">Helm + Istio service mesh</text>
+  <text x="1170" y="760" fill="#e2e8f0" font-size="11">ArgoCD GitOps</text>
+  <text x="1170" y="776" fill="#e2e8f0" font-size="11">DR: RPO 15m · RTO 4h</text>
+
+  <!-- data stores strip -->
+  <rect x="1158" y="800" width="184" height="158" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="1170" y="820" fill="#fbbf24" font-size="12" font-weight="700">STATEFUL STORES</text>
+  <text x="1170" y="840" fill="#e2e8f0" font-size="11">Postgres (per-domain DBs)</text>
+  <text x="1170" y="856" fill="#e2e8f0" font-size="11">Redis (Feast online · limits)</text>
+  <text x="1170" y="872" fill="#e2e8f0" font-size="11">MongoDB (raw payloads)</text>
+  <text x="1170" y="888" fill="#e2e8f0" font-size="11">MinIO / S3 (lakehouse · WORM)</text>
+  <text x="1170" y="904" fill="#e2e8f0" font-size="11">OpenSearch (de-id notes)</text>
+  <text x="1170" y="920" fill="#e2e8f0" font-size="11">Vault (KEK)</text>
+  <text x="1170" y="940" fill="#64748b" font-size="10">all PHI synthetic (Synthea)</text>
+
+  <!-- ============================================================= -->
+  <!--  LEGEND                                                        -->
+  <!-- ============================================================= -->
+  <rect x="40" y="982" width="1080" height="0.5" fill="none"/>
+  <g transform="translate(40, 60)">
+    <!-- placed top-right under title row would overlap; legend kept compact bottom-left band -->
+  </g>
+  <g transform="translate(360, 36)">
+    <rect x="0" y="-16" width="18" height="14" rx="3" class="node-teal"/>
+    <text x="24" y="-4" fill="#475569" font-size="11">real-time path</text>
+    <rect x="130" y="-16" width="18" height="14" rx="3" class="node-amber"/>
+    <text x="154" y="-4" fill="#475569" font-size="11">batch / lakehouse</text>
+    <rect x="290" y="-16" width="18" height="14" rx="3" class="node-slate"/>
+    <text x="314" y="-4" fill="#475569" font-size="11">app / interactive</text>
+    <line x1="430" y1="-9" x2="468" y2="-9" class="edge-teal" marker-end="url(#arrowTeal)"/>
+    <text x="474" y="-4" fill="#475569" font-size="11">stream</text>
+    <line x1="528" y1="-9" x2="566" y2="-9" class="edge-amber" marker-end="url(#arrowAmber)"/>
+    <text x="572" y="-4" fill="#475569" font-size="11">batch</text>
+    <line x1="618" y1="-9" x2="656" y2="-9" class="edge" marker-end="url(#arrow)"/>
+    <text x="662" y="-4" fill="#475569" font-size="11">sync / request</text>
+  </g>
+</svg>

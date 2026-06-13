@@ -1,0 +1,148 @@
+# MedFlow Kubernetes RBAC — least-privilege ClusterRoles + bindings
+#
+# Three human/automation personas, each with the minimum cluster rights for its job. Cited by
+# compliance/threat-model.md (TB6) and docs/compliance.md §3. The split exists so that no single
+# persona can both operate the platform AND read the audit/compliance evidence AND change what is
+# deployed — separation of duties at the cluster layer.
+#
+#   deployer  : GitOps/CD identity (ArgoCD). May reconcile workloads — but NOT exec into pods,
+#               read Secrets, or touch the audit/compliance namespace data planes.
+#   operator  : on-call SRE. May observe and restart workloads and read non-sensitive runtime
+#               state — but NOT read Secrets, NOT exec into PHI/audit namespaces (break-glass only),
+#               and NOT change RBAC.
+#   auditor   : compliance/security reviewer. READ-ONLY across compliance-relevant objects; may read
+#               audit tooling state — but NO write anywhere and NO Secret/exec access.
+#
+# Namespaces assumed: medflow-app, medflow-data, medflow-ml, medflow-audit, medflow-observability.
+# Break-glass cluster access (exec into prod namespaces) is a separate, audited, paged procedure
+# (Falco rule "kubectl exec into prod namespaces"); it is intentionally NOT granted by any role here.
+---
+# =========================================================================================
+# DEPLOYER — reconcile declared workloads; no secrets, no exec, no audit-plane access
+# =========================================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medflow-deployer
+  labels: { app.kubernetes.io/part-of: medflow, medflow.io/persona: deployer }
+rules:
+  # Manage application workloads and their config (the things GitOps reconciles)
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]   # NOTE: no "delete *" of arbitrary objects
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  # Read-only visibility into what it reconciled
+  - apiGroups: [""]
+    resources: ["pods", "events", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  # EXPLICITLY ABSENT: secrets (no get/list), pods/exec, pods/portforward, rbac.* write,
+  #                    delete of Secrets/PVCs, anything in resourceNames of the audit DB.
+---
+# =========================================================================================
+# OPERATOR — observe + restart + read non-sensitive state; no secrets, no exec, no rbac changes
+# =========================================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medflow-operator
+  labels: { app.kubernetes.io/part-of: medflow, medflow.io/persona: operator }
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "endpoints", "events", "configmaps", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  # Restart by rollout (patch the workload's pod template) — bounce a wedged service per runbooks.
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["patch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+  # EXPLICITLY ABSENT: secrets (no get/list) — operators debug from logs/metrics, never raw Secrets;
+  #                    pods/exec & pods/portforward (interactive shell is break-glass-only, Falco-watched);
+  #                    rbac.authorization.k8s.io write; delete of workloads/PVCs.
+---
+# =========================================================================================
+# AUDITOR — read-only compliance evidence; no writes anywhere, no secrets, no exec
+# =========================================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medflow-auditor
+  labels: { app.kubernetes.io/part-of: medflow, medflow.io/persona: auditor }
+rules:
+  # Read-only across the objects an auditor needs to evidence controls (config, policy, workloads).
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "serviceaccounts", "events", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies", "ingresses"]
+    verbs: ["get", "list", "watch"]
+  # Read RBAC itself — auditors must be able to evidence "who can do what" (this very file's effect).
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list", "watch"]
+  # Read mesh/policy posture (Istio PeerAuthentication STRICT, AuthorizationPolicies) as evidence.
+  - apiGroups: ["security.istio.io"]
+    resources: ["peerauthentications", "authorizationpolicies"]
+    verbs: ["get", "list", "watch"]
+  # EXPLICITLY ABSENT: ALL write verbs; secrets get/list; pods/exec; pods/log on PHI namespaces
+  #                    (auditors review the audit_log via compliance/audit-queries/, NOT app logs).
+---
+# =========================================================================================
+# BINDINGS — bind each ClusterRole to a group claim from the IdP (no per-user bindings)
+# =========================================================================================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: medflow-deployer-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: medflow-deployer
+subjects:
+  # CD automation identity (ArgoCD application controller service account)
+  - kind: ServiceAccount
+    name: argocd-application-controller
+    namespace: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: medflow-operator-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: medflow-operator
+subjects:
+  # OIDC group → operators (SRE on-call). Group claim federated from the enterprise IdP.
+  - kind: Group
+    name: medflow:operators
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: medflow-auditor-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: medflow-auditor
+subjects:
+  # OIDC group → compliance/security auditors. Read-only by construction of the ClusterRole above.
+  - kind: Group
+    name: medflow:auditors
+    apiGroup: rbac.authorization.k8s.io
