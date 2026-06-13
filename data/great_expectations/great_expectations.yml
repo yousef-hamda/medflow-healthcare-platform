@@ -1,0 +1,67 @@
+# Great Expectations project for the MedFlow lakehouse quality gates.
+#
+# The Airflow ge_checkpoint wrapper (data/airflow/dags/common/ge_checkpoint.py)
+# loads this project read-only at /opt/airflow/great_expectations and validates
+# Delta tables via a RuntimeBatchRequest against the `medflow_spark` datasource
+# and `medflow_runtime` runtime data connector. Validation results / data docs
+# are written to the writable scratch dir /tmp/medflow_ge (the project mount is
+# read-only at run time).
+config_version: 3.0
+
+datasources:
+  medflow_spark:
+    class_name: Datasource
+    module_name: great_expectations.datasource
+    execution_engine:
+      class_name: SparkDFExecutionEngine
+      module_name: great_expectations.execution_engine
+    data_connectors:
+      medflow_runtime:
+        class_name: RuntimeDataConnector
+        module_name: great_expectations.datasource.data_connector
+        batch_identifiers:
+          - run_id
+
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations/
+
+  validations_store:
+    class_name: ValidationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: /tmp/medflow_ge/validations/
+
+  evaluation_parameter_store:
+    class_name: EvaluationParameterStore
+
+  checkpoint_store:
+    class_name: CheckpointStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: checkpoints/
+    suppress_store_backend_id: true
+
+expectations_store_name: expectations_store
+validations_store_name: validations_store
+evaluation_parameter_store_name: evaluation_parameter_store
+checkpoint_store_name: checkpoint_store
+
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    show_how_to_buttons: false
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: /tmp/medflow_ge/data_docs/local_site/
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+
+anonymous_usage_statistics:
+  enabled: false
+
+config_variables_file_path: uncommitted/config_variables.yml
+plugins_directory: plugins/

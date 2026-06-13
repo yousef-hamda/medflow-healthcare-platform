@@ -1,0 +1,39 @@
+{
+  "expectation_suite_name": "gold_measurement",
+  "meta": {
+    "great_expectations_version": "0.18.19",
+    "notes": "OMOP CDM measurement conformance: non-null concept ids + value sanity."
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "measurement_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": { "column": "measurement_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "person_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "measurement_concept_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "measurement_date" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "value_as_number",
+        "min_value": -1000,
+        "max_value": 100000,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "measurement value sanity band (units vary; gross outliers indicate a mapping/parse fault)" }
+    }
+  ]
+}

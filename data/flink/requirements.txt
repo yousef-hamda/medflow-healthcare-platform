@@ -1,0 +1,7 @@
+# Sepsis-alerting PyFlink job runtime dependencies.
+# Pin PyFlink to the cluster's Flink 1.18 line; the Kafka connector jar
+# (flink-sql-connector-kafka) must be on the cluster classpath / --jarfile.
+apache-flink==1.18.1
+
+# Test-only (pure sepsis_logic, no Flink needed):
+pytest>=7.4,<9

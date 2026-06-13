@@ -1,0 +1,57 @@
+{
+  "expectation_suite_name": "bronze_vitals",
+  "meta": {
+    "great_expectations_version": "0.18.19",
+    "notes": "Physiological plausibility range checks on bronze/vitals_raw. Vitals outside these bounds indicate a device or parsing fault, not a real patient state."
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": { "column": "patient_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "patient_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "heart_rate",
+        "min_value": 20,
+        "max_value": 300,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "HR 20-300 bpm" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "spo2",
+        "min_value": 50,
+        "max_value": 100,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "SpO2 50-100 %" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "resp_rate",
+        "min_value": 4,
+        "max_value": 60,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "RR 4-60 /min" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "temperature_c",
+        "min_value": 30,
+        "max_value": 43,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "Temp 30-43 C" }
+    }
+  ]
+}

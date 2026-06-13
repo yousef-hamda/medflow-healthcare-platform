@@ -1,0 +1,127 @@
+version: 2
+
+# Tests on the OMOP gold marts. person_id uniqueness/non-null and referential
+# integrity (every clinical event references an existing person / visit) are the
+# core CDM guarantees consumed by analytics.
+models:
+  - name: person
+    description: "OMOP CDM v5.4 person — one row per patient."
+    columns:
+      - name: person_id
+        description: "Surrogate bigint PK (hash of patient_id)."
+        tests: [not_null, unique]
+      - name: gender_concept_id
+        description: "8507 MALE, 8532 FEMALE, 0 unknown."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [8507, 8532, 0]
+              quote: false
+      - name: year_of_birth
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1900
+              max_value: 2026
+      - name: person_source_value
+        tests: [not_null, unique]
+
+  - name: visit_occurrence
+    description: "OMOP CDM v5.4 visit_occurrence — one row per encounter."
+    columns:
+      - name: visit_occurrence_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+      - name: visit_start_date
+        tests: [not_null]
+
+  - name: condition_occurrence
+    columns:
+      - name: condition_occurrence_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+      - name: condition_concept_id
+        tests: [not_null]
+
+  - name: drug_exposure
+    columns:
+      - name: drug_exposure_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+      - name: drug_concept_id
+        tests: [not_null]
+
+  - name: measurement
+    columns:
+      - name: measurement_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+      - name: measurement_concept_id
+        tests: [not_null]
+      - name: measurement_date
+        tests: [not_null]
+
+  - name: observation
+    columns:
+      - name: observation_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+
+  - name: procedure_occurrence
+    columns:
+      - name: procedure_occurrence_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+
+  - name: note
+    columns:
+      - name: note_id
+        tests: [not_null, unique]
+      - name: person_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('person')
+              field: person_id
+
+  - name: note_nlp
+    columns:
+      - name: note_nlp_id
+        tests: [not_null, unique]
+      - name: note_id
+        description: "FK to note.note_id."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('note')
+              field: note_id

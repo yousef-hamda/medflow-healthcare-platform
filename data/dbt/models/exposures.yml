@@ -1,0 +1,54 @@
+version: 2
+
+# Downstream Superset analytics that depend on the OMOP gold marts. Declaring
+# them as exposures makes the lineage explicit (`dbt ls --select +exposure:*`)
+# and lets `dbt build` surface which dashboards a model change impacts.
+exposures:
+  - name: clinical_cohort_explorer
+    label: "Clinical Cohort Explorer"
+    type: dashboard
+    maturity: high
+    url: "http://superset:8088/dashboard/clinical-cohort-explorer"
+    description: >
+      Superset dashboard for cohort discovery across conditions, drugs and
+      measurements (OMOP person-level joins).
+    depends_on:
+      - ref('person')
+      - ref('visit_occurrence')
+      - ref('condition_occurrence')
+      - ref('drug_exposure')
+      - ref('measurement')
+    owner:
+      name: MedFlow Data
+      email: data@medflow.example
+
+  - name: sepsis_surveillance
+    label: "Sepsis Surveillance"
+    type: dashboard
+    maturity: medium
+    url: "http://superset:8088/dashboard/sepsis-surveillance"
+    description: >
+      Vitals/measurement trends and sepsis-related observations used by the
+      clinical quality team alongside the real-time Flink alerts.
+    depends_on:
+      - ref('person')
+      - ref('visit_occurrence')
+      - ref('measurement')
+      - ref('observation')
+    owner:
+      name: MedFlow Data
+      email: data@medflow.example
+
+  - name: notes_nlp_review
+    label: "Clinical Notes NLP Review"
+    type: analysis
+    maturity: low
+    url: "http://superset:8088/dashboard/notes-nlp-review"
+    description: >
+      De-identified note + extracted-entity review surface for the NLP team.
+    depends_on:
+      - ref('note')
+      - ref('note_nlp')
+    owner:
+      name: MedFlow Data
+      email: data@medflow.example

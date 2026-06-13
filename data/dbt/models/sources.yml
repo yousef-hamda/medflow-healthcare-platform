@@ -1,0 +1,60 @@
+version: 2
+
+# Silver Delta tables produced by spark_jobs/bronze_to_silver.py + notes_deid.py.
+# Referenced as Delta paths on MinIO via external_location so dbt-spark can read
+# them without a pre-registered Hive table.
+sources:
+  - name: silver
+    description: "MedFlow silver layer (typed, deduplicated clinical entities)."
+    schema: "{{ env_var('MEDFLOW_SILVER_SCHEMA', 'silver') }}"
+    meta:
+      lakehouse_root: "s3a://lakehouse/silver"
+    tables:
+      - name: patients
+        description: "One row per patient (FHIR Patient flattened)."
+        external:
+          location: "s3a://lakehouse/silver/patients"
+          using: delta
+        columns:
+          - name: patient_id
+            description: "FHIR Patient.id — natural key."
+            tests: [not_null, unique]
+      - name: encounters
+        description: "One row per encounter/visit (FHIR Encounter)."
+        external:
+          location: "s3a://lakehouse/silver/encounters"
+          using: delta
+        columns:
+          - name: encounter_id
+            tests: [not_null, unique]
+          - name: patient_id
+            tests: [not_null]
+      - name: observations
+        description: "Vitals + lab results (FHIR Observation)."
+        external:
+          location: "s3a://lakehouse/silver/observations"
+          using: delta
+        columns:
+          - name: observation_id
+            tests: [not_null, unique]
+      - name: medications
+        description: "Medication requests (FHIR MedicationRequest)."
+        external:
+          location: "s3a://lakehouse/silver/medications"
+          using: delta
+        columns:
+          - name: medication_request_id
+            tests: [not_null, unique]
+      - name: imaging_studies
+        description: "DICOM study manifests (metadata only)."
+        external:
+          location: "s3a://lakehouse/silver/imaging_studies"
+          using: delta
+      - name: notes_deid
+        description: "De-identified clinical notes (raw text never persisted)."
+        external:
+          location: "s3a://lakehouse/silver/notes_deid"
+          using: delta
+        columns:
+          - name: note_id
+            tests: [not_null, unique]

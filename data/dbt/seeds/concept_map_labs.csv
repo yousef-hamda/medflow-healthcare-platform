@@ -1,0 +1,32 @@
+source_vocabulary,source_code,source_name,target_concept_id,target_name,unit_concept_id,unit_source
+LOINC,8867-4,Heart rate,3027018,Heart rate,8541,/min
+LOINC,9279-1,Respiratory rate,3024171,Respiratory rate,8541,/min
+LOINC,2708-6,Oxygen saturation in Arterial blood,3016502,Oxygen saturation,8554,%
+LOINC,8310-5,Body temperature,3020891,Body temperature,586323,Cel
+LOINC,8480-6,Systolic blood pressure,3004249,Systolic blood pressure,8876,mm[Hg]
+LOINC,8462-4,Diastolic blood pressure,3012888,Diastolic blood pressure,8876,mm[Hg]
+LOINC,8302-2,Body height,3036277,Body height,8582,cm
+LOINC,29463-7,Body weight,3025315,Body weight,9529,kg
+LOINC,39156-5,Body mass index,3038553,Body mass index,9531,kg/m2
+LOINC,2339-0,Glucose Mass/volume in Blood,3000483,Glucose in Blood,8840,mg/dL
+LOINC,4548-4,Hemoglobin A1c/Hemoglobin.total in Blood,3004410,Hemoglobin A1c,8554,%
+LOINC,718-7,Hemoglobin Mass/volume in Blood,3000963,Hemoglobin,8713,g/dL
+LOINC,4544-3,Hematocrit Volume Fraction of Blood,3023314,Hematocrit,8554,%
+LOINC,6690-2,Leukocytes Number/volume in Blood,3000905,Leukocytes,8848,10*3/uL
+LOINC,777-3,Platelets Number/volume in Blood,3024929,Platelets,8848,10*3/uL
+LOINC,2160-0,Creatinine Mass/volume in Serum or Plasma,3016723,Creatinine in Serum,8840,mg/dL
+LOINC,3094-0,Urea nitrogen Mass/volume in Serum or Plasma,3013682,Urea nitrogen,8840,mg/dL
+LOINC,2951-2,Sodium Moles/volume in Serum or Plasma,3019550,Sodium in Serum,8753,mmol/L
+LOINC,2823-3,Potassium Moles/volume in Serum or Plasma,3023103,Potassium in Serum,8753,mmol/L
+LOINC,2075-0,Chloride Moles/volume in Serum or Plasma,3014576,Chloride in Serum,8753,mmol/L
+LOINC,1963-8,Bicarbonate Moles/volume in Serum or Plasma,3008152,Bicarbonate,8753,mmol/L
+LOINC,2345-7,Glucose Mass/volume in Serum or Plasma,3004501,Glucose in Serum,8840,mg/dL
+LOINC,1742-6,Alanine aminotransferase in Serum or Plasma,3006923,Alanine aminotransferase,8645,U/L
+LOINC,1920-8,Aspartate aminotransferase in Serum or Plasma,3013721,Aspartate aminotransferase,8645,U/L
+LOINC,2093-3,Cholesterol Mass/volume in Serum or Plasma,3027114,Cholesterol,8840,mg/dL
+LOINC,2085-9,Cholesterol in HDL Mass/volume in Serum or Plasma,3007070,HDL Cholesterol,8840,mg/dL
+LOINC,13457-7,Cholesterol in LDL calculated,3028288,LDL Cholesterol,8840,mg/dL
+LOINC,2571-8,Triglyceride Mass/volume in Serum or Plasma,3022192,Triglyceride,8840,mg/dL
+LOINC,1988-5,C reactive protein Mass/volume in Serum or Plasma,3010156,C reactive protein,8636,mg/L
+LOINC,33762-6,Natriuretic peptide B prohormone N-Terminal,3029187,NT-proBNP,8645,pg/mL
+LOINC,6598-7,Troponin T cardiac Mass/volume in Serum or Plasma,3033745,Troponin T cardiac,40789275,ng/mL

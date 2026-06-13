@@ -1,0 +1,48 @@
+{
+  "expectation_suite_name": "silver_patients",
+  "meta": {
+    "great_expectations_version": "0.18.19",
+    "notes": "Structural + sanity checks on silver/patients before it feeds the OMOP person mart."
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": { "column": "patient_id" }
+    },
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": { "column": "gender" }
+    },
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": { "column": "birth_date" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "patient_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": { "column": "patient_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "gender",
+        "value_set": ["male", "female", "other", "unknown"],
+        "mostly": 0.99
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "birth_date",
+        "min_value": "1900-01-01",
+        "max_value": "2026-12-31",
+        "parse_strings_as_datetimes": true,
+        "mostly": 0.99
+      },
+      "meta": { "rationale": "birthdate within 1900-2026" }
+    }
+  ]
+}

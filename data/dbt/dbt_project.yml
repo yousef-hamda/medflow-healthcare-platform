@@ -1,0 +1,52 @@
+name: "medflow_omop"
+version: "1.0.0"
+config-version: 2
+
+# dbt-spark project that builds the OMOP CDM v5.4 gold layer from the MedFlow
+# silver Delta tables. Run from data/dbt via `dbt build`.
+profile: "medflow_omop"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Allow `--vars '{run_id: ...}'` from the Airflow BashOperator without erroring.
+vars:
+  run_id: "manual"
+
+models:
+  medflow_omop:
+    +materialized: table
+    +file_format: delta
+    staging:
+      +materialized: view
+      +schema: silver_stg
+    marts:
+      omop:
+        # Each OMOP table is a Delta table under s3://lakehouse/gold/<name>.
+        +materialized: table
+        +schema: gold
+        +location_root: "s3a://lakehouse/gold"
+
+seeds:
+  medflow_omop:
+    +schema: omop_concept_maps
+    concept_map_conditions:
+      +column_types:
+        source_code: string
+        target_concept_id: bigint
+    concept_map_meds:
+      +column_types:
+        source_code: string
+        target_concept_id: bigint
+    concept_map_labs:
+      +column_types:
+        source_code: string
+        target_concept_id: bigint

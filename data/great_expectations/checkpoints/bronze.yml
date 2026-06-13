@@ -1,0 +1,32 @@
+name: bronze
+config_version: 1.0
+class_name: Checkpoint
+module_name: great_expectations.checkpoint
+
+# Runtime-batch checkpoint for the bronze layer. The Airflow ge_checkpoint
+# wrapper (common/ge_checkpoint.py) calls run_checkpoint(...) and passes the
+# concrete `validations` list (a RuntimeBatchRequest against the `medflow_spark`
+# datasource / `medflow_runtime` connector, batch_identifiers={run_id}, plus the
+# expectation_suite_name) at execution time, so this template declares only the
+# default batch shape and the run actions.
+run_name_template: "bronze-%Y%m%d-%H%M%S"
+
+validations: []
+
+batch_request:
+  datasource_name: medflow_spark
+  data_connector_name: medflow_runtime
+  data_asset_name: bronze_table
+  batch_identifiers:
+    run_id: manual
+
+action_list:
+  - name: store_validation_result
+    action:
+      class_name: StoreValidationResultAction
+  - name: store_evaluation_params
+    action:
+      class_name: StoreEvaluationParametersAction
+  - name: update_data_docs
+    action:
+      class_name: UpdateDataDocsAction

@@ -1,0 +1,31 @@
+source_vocabulary,source_code,source_name,target_concept_id,target_name
+SNOMED,44054006,Type 2 diabetes mellitus,201826,Type 2 diabetes mellitus
+SNOMED,38341003,Hypertensive disorder,320128,Essential hypertension
+SNOMED,195967001,Asthma,317009,Asthma
+SNOMED,13645005,Chronic obstructive lung disease,255573,Chronic obstructive lung disease
+SNOMED,84114007,Heart failure,319835,Congestive heart failure
+SNOMED,53741008,Coronary arteriosclerosis,317576,Coronary arteriosclerosis
+SNOMED,22298006,Myocardial infarction,312327,Acute myocardial infarction
+SNOMED,230690007,Cerebrovascular accident,381591,Cerebrovascular accident
+SNOMED,40055000,Chronic sinusitis,257012,Chronic sinusitis
+SNOMED,233604007,Pneumonia,255848,Pneumonia
+SNOMED,91302008,Sepsis,132797,Sepsis
+SNOMED,49436004,Atrial fibrillation,313217,Atrial fibrillation
+SNOMED,73211009,Diabetes mellitus,201820,Diabetes mellitus
+SNOMED,15777000,Prediabetes,4218811,Prediabetes
+SNOMED,271737000,Anemia,439777,Anemia
+SNOMED,396275006,Osteoarthritis,80180,Osteoarthritis
+SNOMED,69896004,Rheumatoid arthritis,80809,Rheumatoid arthritis
+SNOMED,235595009,Gastroesophageal reflux disease,318800,Gastroesophageal reflux disease
+SNOMED,197480006,Anxiety disorder,442077,Anxiety disorder
+SNOMED,370143000,Major depressive disorder,440383,Depressive disorder
+SNOMED,86406008,Human immunodeficiency virus infection,439727,Human immunodeficiency virus infection
+SNOMED,128613002,Seizure disorder,377091,Epilepsy
+SNOMED,431855005,Chronic kidney disease stage 1,46271022,Chronic kidney disease stage 1
+SNOMED,709044004,Chronic kidney disease,46271022,Chronic kidney disease
+SNOMED,55822004,Hyperlipidemia,432867,Hyperlipidemia
+SNOMED,162864005,Body mass index 30+ - obesity,433736,Obesity
+SNOMED,367498001,Seasonal allergic rhinitis,4101583,Seasonal allergic rhinitis
+SNOMED,68496003,Polyp of colon,4285898,Polyp of colon
+SNOMED,254837009,Malignant neoplasm of breast,4112853,Malignant tumor of breast
+SNOMED,363406005,Malignant tumor of colon,4247297,Malignant tumor of colon

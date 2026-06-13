@@ -1,0 +1,25 @@
+# Copy to ~/.dbt/profiles.yml (or set DBT_PROFILES_DIR to this directory).
+# dbt-spark talks to the Spark Thrift server fronting spark://spark-master:7077.
+# The Airflow silver_to_omop DAG passes DBT_SPARK_HOST / DBT_SPARK_PORT via env.
+medflow_omop:
+  target: spark
+  outputs:
+    spark:
+      type: spark
+      method: thrift
+      host: "{{ env_var('DBT_SPARK_HOST', 'spark-master') }}"
+      port: "{{ env_var('DBT_SPARK_PORT', '10000') | int }}"
+      schema: "{{ env_var('DBT_SPARK_SCHEMA', 'medflow') }}"
+      connect_timeout: 60
+      connect_retries: 5
+      retry_all: true
+      threads: 4
+      server_side_parameters:
+        # Delta + S3A(MinIO) wiring so dbt-created tables land in the lakehouse.
+        spark.sql.extensions: io.delta.sql.DeltaSparkSessionExtension
+        spark.sql.catalog.spark_catalog: org.apache.spark.sql.delta.catalog.DeltaCatalog
+        spark.hadoop.fs.s3a.endpoint: "http://minio:9000"
+        spark.hadoop.fs.s3a.access.key: minio_admin
+        spark.hadoop.fs.s3a.secret.key: minio_dev_password
+        spark.hadoop.fs.s3a.path.style.access: "true"
+        spark.hadoop.fs.s3a.connection.ssl.enabled: "false"

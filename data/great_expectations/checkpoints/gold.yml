@@ -1,0 +1,31 @@
+name: gold
+config_version: 1.0
+class_name: Checkpoint
+module_name: great_expectations.checkpoint
+
+# Runtime-batch checkpoint for the gold OMOP layer. The concrete
+# RuntimeBatchRequest (datasource `medflow_spark`, connector `medflow_runtime`,
+# batch_identifiers {run_id}) and expectation_suite_name (gold_person /
+# gold_measurement) are supplied by common/ge_checkpoint.py at run time via the
+# `validations` argument to run_checkpoint().
+run_name_template: "gold-%Y%m%d-%H%M%S"
+
+validations: []
+
+batch_request:
+  datasource_name: medflow_spark
+  data_connector_name: medflow_runtime
+  data_asset_name: gold_table
+  batch_identifiers:
+    run_id: manual
+
+action_list:
+  - name: store_validation_result
+    action:
+      class_name: StoreValidationResultAction
+  - name: store_evaluation_params
+    action:
+      class_name: StoreEvaluationParametersAction
+  - name: update_data_docs
+    action:
+      class_name: UpdateDataDocsAction
